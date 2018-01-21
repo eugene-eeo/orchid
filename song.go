@@ -42,6 +42,7 @@ func (s *song) Picture() (io.Reader, bool) {
 	if err != nil {
 		return nil, false
 	}
+	defer f.Close()
 	m, err := tag.ReadFrom(f)
 	if err != nil {
 		return nil, false
