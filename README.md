@@ -13,6 +13,7 @@ only properly displayed on tmux (for me). YMMV.
 
 - `r` toggle repeat song/playlist
 - `<space>` pause/play
+- `s` shuffle queue
 - `n` next track
 - `p` prev track
 - `q` quit
