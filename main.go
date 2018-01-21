@@ -6,11 +6,6 @@ import "github.com/lucasb-eyer/go-colorful"
 import "github.com/eliukblau/pixterm/ansimage"
 import "github.com/mattn/go-runewidth"
 
-type updateRequest struct {
-	song   *song
-	paused bool
-}
-
 func fit(a string, width int) string {
 	if runewidth.StringWidth(a) > width {
 		return a[:29] + "…"
@@ -54,15 +49,14 @@ func main() {
 		})
 	}
 
-	updateQueue := func() {
+	updateQueue := func(state *playerState) {
 		for i := 1; i <= 3; i++ {
-			drawName(app.Peek(i).Name(), 2+i, 0xf0)
+			drawName(state.Peek(i).Name(), 2+i, 0xf0)
 		}
-		drawName(app.Peek(-1).Name(), 1, 0xf0)
+		drawName(state.Peek(-1).Name(), 1, 0xf0)
 	}
 
 	imageQueue := make(chan *song, 1)
-	uiUpdateQueue := make(chan updateRequest)
 
 	go (func() {
 		var currentSong *song = nil
@@ -94,38 +88,20 @@ func main() {
 
 	go (func() {
 		for {
-			req := <-uiUpdateQueue
+			state := <-app.State
 			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 			color := termbox.Attribute(0x1ff)
-			if app.repeat {
+			if state.Repeat {
 				color = termbox.AttrReverse
 			}
 			symbol := "⏵ "
-			if req.paused {
+			if state.Paused() {
 				symbol = "Ⅱ "
 			}
-			drawName(symbol+req.song.Name(), 2, color)
-			updateQueue()
+			drawName(symbol+state.Song().Name(), 2, color)
+			updateQueue(state)
 			termbox.Sync()
-			imageQueue <- req.song
-		}
-	})()
-
-	go (func() {
-		var currentSong *song = nil
-		for {
-			select {
-			case p := <-app.Paused:
-				uiUpdateQueue <- updateRequest{
-					paused: p,
-					song:   currentSong,
-				}
-			case currentSong = <-app.NowPlaying:
-				uiUpdateQueue <- updateRequest{
-					paused: false,
-					song:   currentSong,
-				}
-			}
+			imageQueue <- state.Song()
 		}
 	})()
 
@@ -147,10 +123,8 @@ func main() {
 				app.Next(-1, true)
 			case 's':
 				app.Shuffle()
-				app.NowPlaying <- app.currentSong()
 			case 'r':
 				app.ToggleRepeat()
-				app.NowPlaying <- app.currentSong()
 			}
 			if evt.Key == termbox.KeySpace {
 				app.TogglePlay()
