@@ -4,86 +4,63 @@ import "os"
 import "github.com/nsf/termbox-go"
 import "github.com/lucasb-eyer/go-colorful"
 import "github.com/eliukblau/pixterm/ansimage"
-import "github.com/faiface/beep/speaker"
 import "github.com/mattn/go-runewidth"
 
-const (
-	RepeatPlaylist = 0
-	RepeatSong     = 1
-)
-
-func repeatSymbol(r int) rune {
-	switch r {
-	case RepeatPlaylist:
-		return '⚬'
-	case RepeatSong:
-		return '∞'
-	}
-	return ' '
-}
-
-func songNames(app *state, list []*song) []string {
-	s := make([]string, len(list))
-	for i, song := range list {
-		s[i] = app.NameOf(song)
-	}
-	return s
-}
-
-func formatNowPlaying(a string) string {
-	if len(a) > 30 {
+func fit(a string, width int) string {
+	if runewidth.StringWidth(a) > width {
 		return a[:29] + "…"
 	}
-	for len(a) < 30 {
+	for runewidth.StringWidth(a) < width {
 		a = a + " "
 	}
 	return a
 }
 
+func unicodeCells(s string, f func(int, rune)) {
+	x := 0
+	for _, c := range s {
+		r := rune(c)
+		f(x, r)
+		x += runewidth.RuneWidth(r)
+	}
+}
+
 func main() {
-	speaker.Init(48000, 4800)
 	app, err := newState(".")
 	if err != nil {
 		os.Exit(1)
 	}
 	/*
-		+---+ <Now Playing>
-		|   | <Up Next>
-		+---+
+		+-------+
+		|       | <Prev>
+		| 16x16 | <Now Playing>
+		|       | <Up Next>
+		+-------+
 	*/
 	termbox.Init()
+	termbox.SetOutputMode(termbox.Output256)
 	defer termbox.Close()
 
-	repeatMode := 0
 	exit := make(chan struct{})
 
-	updateRepeat := func() {
-		termbox.SetCell(18+31, 1, rune(repeatSymbol(repeatMode)), termbox.ColorGreen, termbox.ColorDefault)
+	drawName := func(name string, y int, color termbox.Attribute) {
+		unicodeCells(fit(name, 30), func(dx int, r rune) {
+			termbox.SetCell(18+dx, y, r, color, termbox.ColorDefault)
+		})
 	}
 
 	updateQueue := func() {
-		for i := 1; i <= 4; i++ {
-			s := formatNowPlaying(app.NameOf(app.Peek(i)))
-			x := 0
-			for _, c := range formatNowPlaying(s) {
-				termbox.SetCell(18+x, 1+i, rune(c), termbox.ColorDefault, termbox.ColorDefault)
-				x += runewidth.RuneWidth(rune(c))
-			}
+		for i := 1; i <= 3; i++ {
+			drawName(app.NameOf(app.Peek(i)), 2+i, 0xf0)
 		}
+		drawName(app.NameOf(app.Peek(-1)), 1, 0xf0)
 	}
+
+	imageQueue := make(chan *song, 1)
 
 	go (func() {
 		for {
-			sng := <-app.nowPlaying
-			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-			x := 0
-			for _, c := range formatNowPlaying(app.NameOf(sng)) {
-				termbox.SetCell(18+x, 1, rune(c), termbox.AttrReverse, termbox.ColorDefault)
-				x += runewidth.RuneWidth(rune(c))
-			}
-			updateRepeat()
-			updateQueue()
-			termbox.Sync()
+			sng := <-imageQueue
 			r, ok := sng.Picture()
 			if !ok {
 				continue
@@ -97,13 +74,27 @@ func main() {
 			termbox.Sync()
 			print(img.Render())
 			print("\u001B[?25l")
-			termbox.HideCursor()
+		}
+	})()
+
+	go (func() {
+		for {
+			sng := <-app.NowPlaying
+			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+			color := termbox.Attribute(0x1ff)
+			if app.repeat {
+				color = termbox.AttrReverse
+			}
+			drawName(app.NameOf(sng), 2, color)
+			updateQueue()
+			termbox.Sync()
+			imageQueue <- sng
 		}
 	})()
 
 	go app.Loop()
-	if len(app.queue) > 0 {
-		app.Next(0)
+	if len(app.songs) > 0 {
+		app.Next(0, true)
 	}
 
 	go (func() {
@@ -114,24 +105,15 @@ func main() {
 				exit <- struct{}{}
 				break
 			case 'n':
-				app.Next(1)
+				app.Next(1, true)
 			case 'p':
-				app.Next(-1)
+				app.Next(-1, true)
 			case 's':
 				app.Shuffle()
-				app.Next(0)
+				app.NowPlaying <- app.currentSong()
 			case 'r':
-				repeatMode = mod(repeatMode+1, 2)
-				switch repeatMode {
-				case RepeatPlaylist:
-					app.queue = app.songs
-					app.Next(0)
-					break
-				case RepeatSong:
-					s := app.currentSong()
-					app.queue = []*song{s}
-					app.Next(0)
-				}
+				app.ToggleRepeat()
+				app.NowPlaying <- app.currentSong()
 			}
 			if evt.Key == termbox.KeySpace {
 				app.TogglePlay()

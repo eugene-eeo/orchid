@@ -48,11 +48,11 @@ func mod(r int, m int) int {
 }
 
 type state struct {
-	nowPlaying chan *song
+	cursor     int
+	repeat     bool
+	NowPlaying chan *song
 	directory  string
 	songs      []*song
-	queue      []*song
-	cursor     int
 	songsQueue chan *song
 	toggle     chan bool
 	stop       chan bool
@@ -67,9 +67,8 @@ func newState(dir string) (s *state, err error) {
 	songs, err := findSongs(dir)
 	s = &state{
 		directory:  dir,
-		queue:      songs,
 		songs:      songs,
-		nowPlaying: make(chan *song),
+		NowPlaying: make(chan *song),
 		songsQueue: make(chan *song),
 		toggle:     make(chan bool),
 		stop:       make(chan bool),
@@ -79,7 +78,7 @@ func newState(dir string) (s *state, err error) {
 }
 
 func (s *state) currentSong() *song {
-	return s.queue[s.cursor]
+	return s.songs[s.cursor]
 }
 
 func (s *state) NameOf(so *song) string {
@@ -91,15 +90,15 @@ func (s *state) TogglePlay() {
 }
 
 func (s *state) Shuffle() {
-	n := len(s.queue)
+	n := len(s.songs)
 	u := s.currentSong()
 	for i := 0; i < n; i++ {
 		j := rand.Intn(n)
-		s.queue[i], s.queue[j] = s.queue[j], s.queue[i]
-		if s.queue[i] == u {
+		s.songs[i], s.songs[j] = s.songs[j], s.songs[i]
+		if s.songs[i] == u {
 			s.cursor = i
 		}
-		if s.queue[j] == u {
+		if s.songs[j] == u {
 			s.cursor = j
 		}
 	}
@@ -119,37 +118,43 @@ func (s *state) Loop() {
 				stream.Teardown(false)
 			}
 		case u := <-s.songsQueue:
+			// when we are done let it naturally go to next stream
 			stream, err = u.SongStream(func() {
-				s.Next(1)
+				s.Next(1, false)
 			})
+			// forcefully move to next song if there are errors
 			if err != nil {
 				s.songs = remove(u, s.songs)
-				s.queue = remove(u, s.queue)
-				go s.Next(1)
+				go s.Next(1, true)
 				continue
 			}
 			if err = stream.Play(); err != nil {
 				s.songs = remove(u, s.songs)
-				s.queue = remove(u, s.queue)
-				go s.Next(1)
+				go s.Next(1, true)
 			}
 		}
 	}
 }
 
-func (s *state) Next(i int) {
-	if len(s.queue) == 0 {
+func (s *state) ToggleRepeat() {
+	s.repeat = !s.repeat
+}
+
+func (s *state) Next(i int, force bool) {
+	if len(s.songs) == 0 {
 		return
 	}
-	s.cursor = mod(s.cursor+i, len(s.queue))
+	if !s.repeat || force {
+		s.cursor = mod(s.cursor+i, len(s.songs))
+	}
 	s.stop <- true
-	s.songsQueue <- s.queue[s.cursor]
-	s.nowPlaying <- s.queue[s.cursor]
+	s.songsQueue <- s.songs[s.cursor]
+	s.NowPlaying <- s.songs[s.cursor]
 }
 
 func (s *state) Peek(i int) *song {
-	if len(s.queue) == 0 {
+	if len(s.songs) == 0 {
 		return nil
 	}
-	return s.queue[mod(s.cursor+i, len(s.queue))]
+	return s.songs[mod(s.cursor+i, len(s.songs))]
 }

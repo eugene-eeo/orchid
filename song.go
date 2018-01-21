@@ -97,10 +97,10 @@ func (s *songStream) Toggle() {
 	speaker.Unlock()
 }
 
-func (s *songStream) Play() (err error) {
-	err = s.initSpeaker()
+func (s *songStream) Play() error {
+	err := s.initSpeaker()
 	if err != nil {
-		return
+		return err
 	}
 	speaker.Play(beep.Seq(
 		s.ctrl,
@@ -108,5 +108,5 @@ func (s *songStream) Play() (err error) {
 			s.Teardown(true)
 		}),
 	))
-	return
+	return nil
 }
