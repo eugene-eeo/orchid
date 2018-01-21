@@ -51,6 +51,7 @@ type state struct {
 	cursor     int
 	repeat     bool
 	NowPlaying chan *song
+	Paused     chan bool
 	directory  string
 	songs      []*song
 	songsQueue chan *song
@@ -73,16 +74,13 @@ func newState(dir string) (s *state, err error) {
 		toggle:     make(chan bool),
 		stop:       make(chan bool),
 		next:       make(chan bool),
+		Paused:     make(chan bool),
 	}
 	return
 }
 
 func (s *state) currentSong() *song {
 	return s.songs[s.cursor]
-}
-
-func (s *state) NameOf(so *song) string {
-	return so.RelPath(s.directory)
 }
 
 func (s *state) TogglePlay() {
@@ -112,6 +110,7 @@ func (s *state) Loop() {
 		case <-s.toggle:
 			if stream != nil {
 				stream.Toggle()
+				s.Paused <- stream.ctrl.Paused
 			}
 		case <-s.stop:
 			if stream != nil {

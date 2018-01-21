@@ -6,6 +6,11 @@ import "github.com/lucasb-eyer/go-colorful"
 import "github.com/eliukblau/pixterm/ansimage"
 import "github.com/mattn/go-runewidth"
 
+type updateRequest struct {
+	song   *song
+	paused bool
+}
+
 func fit(a string, width int) string {
 	if runewidth.StringWidth(a) > width {
 		return a[:29] + "…"
@@ -51,44 +56,76 @@ func main() {
 
 	updateQueue := func() {
 		for i := 1; i <= 3; i++ {
-			drawName(app.NameOf(app.Peek(i)), 2+i, 0xf0)
+			drawName(app.Peek(i).Name(), 2+i, 0xf0)
 		}
-		drawName(app.NameOf(app.Peek(-1)), 1, 0xf0)
+		drawName(app.Peek(-1).Name(), 1, 0xf0)
 	}
 
 	imageQueue := make(chan *song, 1)
+	uiUpdateQueue := make(chan updateRequest)
 
 	go (func() {
+		var currentSong *song = nil
+		var image *ansimage.ANSImage = nil
 		for {
 			sng := <-imageQueue
-			r, ok := sng.Picture()
-			if !ok {
-				continue
+			if sng != currentSong {
+				currentSong = sng
+				r, ok := sng.Picture()
+				if !ok {
+					image = nil
+					continue
+				}
+				bg, _ := colorful.Hex("#000000")
+				image, err = ansimage.NewScaledFromReader(r, 16, 16, bg, ansimage.ScaleModeResize, ansimage.NoDithering)
+				if err != nil {
+					image = nil
+					continue
+				}
 			}
-			bg, _ := colorful.Hex("#000000")
-			img, err := ansimage.NewScaledFromReader(r, 16, 16, bg, ansimage.ScaleModeResize, ansimage.NoDithering)
-			if err != nil {
-				continue
+			if image != nil {
+				termbox.SetCursor(0, 0)
+				termbox.Sync()
+				print(image.Render())
+				print("\u001B[?25l")
 			}
-			termbox.SetCursor(0, 0)
-			termbox.Sync()
-			print(img.Render())
-			print("\u001B[?25l")
 		}
 	})()
 
 	go (func() {
 		for {
-			sng := <-app.NowPlaying
+			req := <-uiUpdateQueue
 			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 			color := termbox.Attribute(0x1ff)
 			if app.repeat {
 				color = termbox.AttrReverse
 			}
-			drawName(app.NameOf(sng), 2, color)
+			symbol := "⏵ "
+			if req.paused {
+				symbol = "Ⅱ "
+			}
+			drawName(symbol+req.song.Name(), 2, color)
 			updateQueue()
 			termbox.Sync()
-			imageQueue <- sng
+			imageQueue <- req.song
+		}
+	})()
+
+	go (func() {
+		var currentSong *song = nil
+		for {
+			select {
+			case p := <-app.Paused:
+				uiUpdateQueue <- updateRequest{
+					paused: p,
+					song:   currentSong,
+				}
+			case currentSong = <-app.NowPlaying:
+				uiUpdateQueue <- updateRequest{
+					paused: false,
+					song:   currentSong,
+				}
+			}
 		}
 	})()
 

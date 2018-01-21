@@ -15,16 +15,9 @@ type song struct {
 	path string
 }
 
-func (s *song) abs() string {
-	f, err := filepath.Abs(s.path)
-	if err != nil {
-		panic(err)
-	}
-	return f
-}
-
-func (s *song) RelPath(root string) string {
-	return strings.TrimPrefix(s.abs(), root+"/")
+func (s *song) Name() string {
+	path := filepath.Base(s.path)
+	return strings.TrimSuffix(path, filepath.Ext(path))
 }
 
 func (s *song) Mp3() (beep.StreamSeekCloser, beep.Format, error) {
