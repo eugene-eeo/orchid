@@ -32,6 +32,7 @@ func (s *Speaker) getStream(song Song, res chan bool) (*Stream, error) {
 	stream, err := song.Stream(func(graceful bool) {
 		go func() {
 			res <- graceful
+			close(res)
 		}()
 	})
 	if err != nil {
@@ -40,7 +41,7 @@ func (s *Speaker) getStream(song Song, res chan bool) (*Stream, error) {
 	return stream, stream.Play()
 }
 
-func (s *Speaker) Play(song Song) (chan bool, error) {
+func (s *Speaker) Play(song Song) (<-chan bool, error) {
 	s.Stop()
 	q := make(chan bool)
 	stream, err := s.getStream(song, q)

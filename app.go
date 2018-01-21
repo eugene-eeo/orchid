@@ -8,16 +8,18 @@ import "github.com/lucasb-eyer/go-colorful"
 import "github.com/eliukblau/pixterm/ansimage"
 
 func nextTrack(p *player.Player, i int, force bool, q chan func(*player.Player)) func(*player.Player) {
-	var next func(int, bool)
-	next = func(i int, f bool) {
-		done, err := p.Next(i, f)
+	return func(*player.Player) {
+		done, err := p.Next(i, force)
+		// check if there is a next song so that we don't
+		// loop infinitely with nothing, since after each
+		// request we make a render call
+		if err == player.NoMoreSongs {
+			return
+		}
 		if err != nil {
 			p.Remove()
-			if _, err := p.Peek(0); err != nil {
-				return
-			}
 			go func() {
-				q <- nextTrack(p, 1, true, q)
+				q <- nextTrack(p, 0, true, q)
 			}()
 		}
 		go func() {
@@ -26,9 +28,6 @@ func nextTrack(p *player.Player, i int, force bool, q chan func(*player.Player))
 				q <- nextTrack(p, 1, false, q)
 			}
 		}()
-	}
-	return func(*player.Player) {
-		next(i, force)
 	}
 }
 
@@ -40,6 +39,19 @@ func getIndicator(p *player.Player) string {
 		return "⥮"
 	}
 	return "⏵"
+}
+
+func getImage(sng player.Song) image {
+	r, ok := sng.Picture()
+	if !ok {
+		return &defaultImage{}
+	}
+	bg, _ := colorful.Hex("#000000")
+	img, err := ansimage.NewScaledFromReader(bytes.NewReader(r), 16, 16, bg, ansimage.ScaleModeResize, ansimage.NoDithering)
+	if err != nil {
+		return &defaultImage{}
+	}
+	return img
 }
 
 func drawName(name string, y int, color termbox.Attribute) {
@@ -84,21 +96,7 @@ func main() {
 
 	exit := make(chan struct{})
 	requests := make(chan func(*player.Player))
-
 	imageQueue := make(chan player.Song, 1)
-
-	getImage := func(sng player.Song) image {
-		r, ok := sng.Picture()
-		if !ok {
-			return &defaultImage{}
-		}
-		bg, _ := colorful.Hex("#000000")
-		img, err := ansimage.NewScaledFromReader(bytes.NewReader(r), 16, 16, bg, ansimage.ScaleModeResize, ansimage.NoDithering)
-		if err != nil {
-			return &defaultImage{}
-		}
-		return img
-	}
 
 	go (func() {
 		var currentSong player.Song = player.Song("")

@@ -75,7 +75,7 @@ func (p *Player) Peek(i int) (Song, error) {
 	return p.songs[j], nil
 }
 
-func (p *Player) Next(i int, force bool) (chan bool, error) {
+func (p *Player) Next(i int, force bool) (<-chan bool, error) {
 	p.index.Next(i, force)
 	u, err := p.Song()
 	if err != nil {
