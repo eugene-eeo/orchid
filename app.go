@@ -14,6 +14,9 @@ func nextTrack(p *player.Player, i int, force bool, q chan func(*player.Player))
 		fmt.Println(err)
 		p.Remove()
 		go func() {
+			if _, err := p.Peek(1); err != nil {
+				return
+			}
 			q <- func(p *player.Player) {
 				nextTrack(p, 1, true, q)
 			}
@@ -41,19 +44,41 @@ func getIndicator(p *player.Player) string {
 	return "⏵"
 }
 
+func drawName(name string, y int, color termbox.Attribute) {
+	unicodeCells(fit(name, 30), func(dx int, r rune) {
+		termbox.SetCell(18+dx, y, r, color, termbox.ColorDefault)
+	})
+}
+
+func updateQueue(app *player.Player) {
+	for i := 1; i <= 3; i++ {
+		s, err := app.Peek(i)
+		if err != nil {
+			break
+		}
+		drawName(s.Name(), 2+i, 0xf0)
+	}
+	s, err := app.Peek(-1)
+	if err != nil {
+		return
+	}
+	drawName(s.Name(), 1, 0xf0)
+}
+
+/*
+	+-------+
+	|       | <Prev>
+	| 16x16 | <Now Playing>
+	|       | <Up Next>
+	+-------+
+*/
+
 func main() {
 	songs, err := player.FindSongs(".")
 	if err != nil {
 		os.Exit(1)
 	}
 	app := player.NewPlayer(songs)
-	/*
-		+-------+
-		|       | <Prev>
-		| 16x16 | <Now Playing>
-		|       | <Up Next>
-		+-------+
-	*/
 
 	must(termbox.Init())
 	termbox.SetOutputMode(termbox.Output256)
@@ -61,27 +86,6 @@ func main() {
 
 	exit := make(chan struct{})
 	requests := make(chan func(*player.Player))
-
-	drawName := func(name string, y int, color termbox.Attribute) {
-		unicodeCells(fit(name, 30), func(dx int, r rune) {
-			termbox.SetCell(18+dx, y, r, color, termbox.ColorDefault)
-		})
-	}
-
-	updateQueue := func(app *player.Player) {
-		for i := 1; i <= 3; i++ {
-			s, err := app.Peek(i)
-			if err != nil {
-				break
-			}
-			drawName(s.Name(), 2+i, 0xf0)
-		}
-		s, err := app.Peek(-1)
-		if err != nil {
-			return
-		}
-		drawName(s.Name(), 1, 0xf0)
-	}
 
 	imageQueue := make(chan player.Song, 1)
 

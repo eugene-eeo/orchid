@@ -89,6 +89,9 @@ func (p *Player) ToggleShuffle() {
 	if p.Shuffle {
 		p.cursor = shuffle(p.order, p.cursor)
 	} else {
+		if len(p.order) == 0 {
+			return
+		}
 		p.cursor = p.order[p.cursor]
 		sort.Ints(p.order)
 	}
@@ -152,7 +155,7 @@ func (p *Player) Play() (done chan bool, err error) {
 }
 
 func (p *Player) Remove() {
-	if len(p.Queue) > 0 {
+	if len(p.order) > 0 {
 		p.order = remove(p.cursor, p.order)
 	}
 }
