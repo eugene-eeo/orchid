@@ -103,13 +103,14 @@ func (s *state) TogglePlay() {
 func (s *state) Shuffle() {
 	s.Requests <- func(st *playerState) *playerState {
 		n := len(st.Queue)
+		z := st.Song()
 		for i := 0; i < n; i++ {
 			j := rand.Intn(n)
 			st.Queue[i], st.Queue[j] = st.Queue[j], st.Queue[i]
-			if st.Queue[i] == st.Song() {
+			if st.Queue[i] == z {
 				st.cursor = i
 			}
-			if st.Queue[j] == st.Song() {
+			if st.Queue[j] == z {
 				st.cursor = j
 			}
 		}

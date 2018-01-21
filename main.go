@@ -6,6 +6,12 @@ import "github.com/lucasb-eyer/go-colorful"
 import "github.com/eliukblau/pixterm/ansimage"
 import "github.com/mattn/go-runewidth"
 
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 func fit(a string, width int) string {
 	if runewidth.StringWidth(a) > width {
 		return a[:29] + "…"
@@ -37,7 +43,7 @@ func main() {
 		|       | <Up Next>
 		+-------+
 	*/
-	termbox.Init()
+	must(termbox.Init())
 	termbox.SetOutputMode(termbox.Output256)
 	defer termbox.Close()
 
@@ -79,7 +85,7 @@ func main() {
 			}
 			if image != nil {
 				termbox.SetCursor(0, 0)
-				termbox.Sync()
+				must(termbox.Sync())
 				print(image.Render())
 				print("\u001B[?25l")
 			}
@@ -89,7 +95,7 @@ func main() {
 	go (func() {
 		for {
 			state := <-app.State
-			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+			must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
 			color := termbox.Attribute(0x1ff)
 			if state.Repeat {
 				color = termbox.AttrReverse
@@ -100,7 +106,7 @@ func main() {
 			}
 			drawName(symbol+state.Song().Name(), 2, color)
 			updateQueue(state)
-			termbox.Sync()
+			must(termbox.Sync())
 			imageQueue <- state.Song()
 		}
 	})()
