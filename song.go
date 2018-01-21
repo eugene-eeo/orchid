@@ -62,18 +62,18 @@ func (s *song) Picture() (io.Reader, bool) {
 type songStream struct {
 	stream   beep.StreamCloser
 	format   beep.Format
-	paused   bool
-	finished bool
 	done     func()
+	ctrl     *beep.Ctrl
+	finished bool
 }
 
 func newSongStream(stream beep.StreamCloser, format beep.Format, done func()) *songStream {
 	return &songStream{
 		stream:   stream,
 		format:   format,
-		paused:   true,
 		finished: false,
 		done:     done,
+		ctrl:     &beep.Ctrl{Streamer: stream},
 	}
 }
 
@@ -83,7 +83,7 @@ func (s *songStream) initSpeaker() error {
 
 func (s *songStream) Teardown(d bool) {
 	if !s.finished {
-		s.stream.Close()
+		_ = s.stream.Close()
 		if d {
 			s.done()
 		}
@@ -92,25 +92,18 @@ func (s *songStream) Teardown(d bool) {
 }
 
 func (s *songStream) Toggle() {
-	s.paused = !s.paused
+	speaker.Lock()
+	s.ctrl.Paused = !s.ctrl.Paused
+	speaker.Unlock()
 }
 
 func (s *songStream) Play() (err error) {
-	s.paused = false
 	err = s.initSpeaker()
 	if err != nil {
 		return
 	}
 	speaker.Play(beep.Seq(
-		beep.StreamerFunc(func(sample [][2]float64) (int, bool) {
-			if !s.paused {
-				return s.stream.Stream(sample)
-			}
-			for i := 0; i < len(sample); i++ {
-				sample[i] = [2]float64{0, 0}
-			}
-			return len(sample), true
-		}),
+		s.ctrl,
 		beep.Callback(func() {
 			s.Teardown(true)
 		}),
