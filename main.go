@@ -5,6 +5,7 @@ import "github.com/nsf/termbox-go"
 import "github.com/lucasb-eyer/go-colorful"
 import "github.com/eliukblau/pixterm/ansimage"
 import "github.com/faiface/beep/speaker"
+import "github.com/mattn/go-runewidth"
 
 const (
 	RepeatPlaylist = 0
@@ -63,35 +64,40 @@ func main() {
 	updateQueue := func() {
 		for i := 1; i <= 4; i++ {
 			s := formatNowPlaying(app.NameOf(app.Peek(i)))
-			for x, c := range formatNowPlaying(s) {
+			x := 0
+			for _, c := range formatNowPlaying(s) {
 				termbox.SetCell(18+x, 1+i, rune(c), termbox.ColorDefault, termbox.ColorDefault)
+				x += runewidth.RuneWidth(rune(c))
 			}
 		}
-	}
-
-	updateUI := func(s *song) {
-		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-		for i, c := range formatNowPlaying(app.NameOf(s)) {
-			termbox.SetCell(18+i, 1, rune(c), termbox.AttrReverse, termbox.ColorDefault)
-		}
-		updateRepeat()
-		updateQueue()
-		termbox.Sync()
-		r, ok := s.Picture()
-		if !ok {
-			return
-		}
-		bg, _ := colorful.Hex("#000000")
-		img, _ := ansimage.NewScaledFromReader(r, 16, 16, bg, ansimage.ScaleModeResize, ansimage.NoDithering)
-		termbox.SetCursor(0, 0)
-		termbox.Sync()
-		img.Draw()
 	}
 
 	go (func() {
 		for {
 			sng := <-app.nowPlaying
-			updateUI(sng)
+			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+			x := 0
+			for _, c := range formatNowPlaying(app.NameOf(sng)) {
+				termbox.SetCell(18+x, 1, rune(c), termbox.AttrReverse, termbox.ColorDefault)
+				x += runewidth.RuneWidth(rune(c))
+			}
+			updateRepeat()
+			updateQueue()
+			termbox.Sync()
+			r, ok := sng.Picture()
+			if !ok {
+				continue
+			}
+			bg, _ := colorful.Hex("#000000")
+			img, err := ansimage.NewScaledFromReader(r, 16, 16, bg, ansimage.ScaleModeResize, ansimage.NoDithering)
+			if err != nil {
+				continue
+			}
+			termbox.SetCursor(0, 0)
+			termbox.Sync()
+			print(img.Render())
+			print("\u001B[?25l")
+			termbox.HideCursor()
 		}
 	})()
 
@@ -113,7 +119,7 @@ func main() {
 				app.Next(-1)
 			case 's':
 				app.Shuffle()
-				updateUI(app.currentSong())
+				app.Next(0)
 			case 'r':
 				repeatMode = mod(repeatMode+1, 2)
 				switch repeatMode {

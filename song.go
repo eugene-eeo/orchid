@@ -1,5 +1,6 @@
 package main
 
+import "time"
 import "io"
 import "bytes"
 import "os"
@@ -9,8 +10,6 @@ import "github.com/faiface/beep"
 import "github.com/faiface/beep/speaker"
 import "github.com/faiface/beep/mp3"
 import "github.com/dhowden/tag"
-
-//var log = make(chan string, 100)
 
 type song struct {
 	path string
@@ -79,14 +78,12 @@ func newSongStream(stream beep.StreamCloser, format beep.Format, done func()) *s
 }
 
 func (s *songStream) initSpeaker() error {
-	return nil
+	return speaker.Init(s.format.SampleRate, s.format.SampleRate.N(time.Second/10))
 }
 
 func (s *songStream) Teardown(d bool) {
 	if !s.finished {
-		speaker.Lock()
 		s.stream.Close()
-		speaker.Unlock()
 		if d {
 			s.done()
 		}
@@ -99,14 +96,11 @@ func (s *songStream) Toggle() {
 }
 
 func (s *songStream) Play() (err error) {
-	//log <- "Play()"
 	s.paused = false
-	//log <- "InitSpeaker()"
 	err = s.initSpeaker()
 	if err != nil {
 		return
 	}
-	//log <- "speaker.Play(...)"
 	speaker.Play(beep.Seq(
 		beep.StreamerFunc(func(sample [][2]float64) (int, bool) {
 			if !s.paused {
@@ -121,6 +115,5 @@ func (s *songStream) Play() (err error) {
 			s.Teardown(true)
 		}),
 	))
-	//log <- "Play() end"
 	return
 }

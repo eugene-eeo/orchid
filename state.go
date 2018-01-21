@@ -5,6 +5,22 @@ import "strings"
 import "path/filepath"
 import "math/rand"
 
+func remove(s *song, xs []*song) []*song {
+	j := 0
+	f := false
+	for i, x := range xs {
+		if x == s {
+			f = true
+			j = i
+			break
+		}
+	}
+	if f {
+		return append(xs[:j], xs[j+1:]...)
+	}
+	return xs
+}
+
 func findSongs(dir string) (songs []*song, err error) {
 	f, err := os.Open(dir)
 	if err != nil {
@@ -107,9 +123,16 @@ func (s *state) Loop() {
 				s.Next(1)
 			})
 			if err != nil {
-				panic(err)
+				s.songs = remove(u, s.songs)
+				s.queue = remove(u, s.queue)
+				go s.Next(1)
+				continue
 			}
-			stream.Play()
+			if err = stream.Play(); err != nil {
+				s.songs = remove(u, s.songs)
+				s.queue = remove(u, s.queue)
+				go s.Next(1)
+			}
 		}
 	}
 }
