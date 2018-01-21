@@ -7,30 +7,29 @@ import "github.com/eugene-eeo/hubwub/player"
 import "github.com/lucasb-eyer/go-colorful"
 import "github.com/eliukblau/pixterm/ansimage"
 
-func nextTrack(p *player.Player, i int, force bool, q chan func(*player.Player)) {
-	d, err := p.Next(i, force)
-	if err != nil {
-		p.Remove()
-		go func() {
+func nextTrack(p *player.Player, i int, force bool, q chan func(*player.Player)) func(*player.Player) {
+	var next func(int, bool)
+	next = func(i int, f bool) {
+		done, err := p.Next(i, f)
+		if err != nil {
+			p.Remove()
 			if _, err := p.Peek(0); err != nil {
 				return
 			}
-			q <- func(p *player.Player) {
-				nextTrack(p, 0, true, q)
+			go func() {
+				q <- nextTrack(p, 1, true, q)
+			}()
+		}
+		go func() {
+			complete := <-done
+			if complete {
+				q <- nextTrack(p, 1, false, q)
 			}
 		}()
-		return
 	}
-	go (func() {
-		graceful := <-d
-		// if we didn't complete playback then don't continue pushing
-		if !graceful {
-			return
-		}
-		q <- func(p *player.Player) {
-			nextTrack(p, 1, false, q)
-		}
-	})()
+	return func(*player.Player) {
+		next(i, force)
+	}
 }
 
 func getIndicator(p *player.Player) string {
@@ -88,31 +87,32 @@ func main() {
 
 	imageQueue := make(chan player.Song, 1)
 
+	getImage := func(sng player.Song) image {
+		r, ok := sng.Picture()
+		if !ok {
+			return &defaultImage{}
+		}
+		bg, _ := colorful.Hex("#000000")
+		img, err := ansimage.NewScaledFromReader(bytes.NewReader(r), 16, 16, bg, ansimage.ScaleModeResize, ansimage.NoDithering)
+		if err != nil {
+			return &defaultImage{}
+		}
+		return img
+	}
+
 	go (func() {
 		var currentSong player.Song = player.Song("")
-		var image *ansimage.ANSImage = nil
+		var img image = &defaultImage{}
 		for {
 			sng := <-imageQueue
 			if sng != currentSong {
 				currentSong = sng
-				r, ok := sng.Picture()
-				if !ok {
-					image = nil
-					continue
-				}
-				bg, _ := colorful.Hex("#000000")
-				image, err = ansimage.NewScaledFromReader(bytes.NewReader(r), 16, 16, bg, ansimage.ScaleModeResize, ansimage.NoDithering)
-				if err != nil {
-					image = nil
-					continue
-				}
+				img = getImage(sng)
 			}
-			if image != nil {
-				termbox.SetCursor(0, 0)
-				must(termbox.Sync())
-				print(image.Render())
-				print("\u001B[?25l")
-			}
+			termbox.SetCursor(0, 0)
+			must(termbox.Sync())
+			print(img.Render())
+			print("\u001B[?25l")
 		}
 	})()
 
@@ -143,7 +143,7 @@ func main() {
 		}
 	})()
 
-	requests <- func(app *player.Player) { nextTrack(app, 0, true, requests) }
+	requests <- nextTrack(app, 0, true, requests)
 	go (func() {
 		for {
 			evt := termbox.PollEvent()
@@ -152,9 +152,9 @@ func main() {
 				exit <- struct{}{}
 				break
 			case 'n':
-				requests <- func(h *player.Player) { nextTrack(app, 1, true, requests) }
+				requests <- nextTrack(app, 1, true, requests)
 			case 'p':
-				requests <- func(h *player.Player) { nextTrack(app, -1, true, requests) }
+				requests <- nextTrack(app, -1, true, requests)
 			case 's':
 				requests <- func(h *player.Player) { h.ToggleShuffle() }
 			case 'r':
