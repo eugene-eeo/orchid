@@ -1,6 +1,5 @@
 package main
 
-import "fmt"
 import "bytes"
 import "os"
 import "github.com/nsf/termbox-go"
@@ -11,20 +10,20 @@ import "github.com/eliukblau/pixterm/ansimage"
 func nextTrack(p *player.Player, i int, force bool, q chan func(*player.Player)) {
 	d, err := p.Next(i, force)
 	if err != nil {
-		fmt.Println(err)
 		p.Remove()
 		go func() {
-			if _, err := p.Peek(1); err != nil {
+			if _, err := p.Peek(0); err != nil {
 				return
 			}
 			q <- func(p *player.Player) {
-				nextTrack(p, 1, true, q)
+				nextTrack(p, 0, true, q)
 			}
 		}()
 		return
 	}
 	go (func() {
 		graceful := <-d
+		// if we didn't complete playback then don't continue pushing
 		if !graceful {
 			return
 		}
@@ -35,7 +34,7 @@ func nextTrack(p *player.Player, i int, force bool, q chan func(*player.Player))
 }
 
 func getIndicator(p *player.Player) string {
-	if p.Stream != nil && p.Stream.Paused() {
+	if p.Speaker.Paused() {
 		return "Ⅱ"
 	}
 	if p.Shuffle {
@@ -144,9 +143,7 @@ func main() {
 		}
 	})()
 
-	if len(app.Queue) > 0 {
-		requests <- func(app *player.Player) { nextTrack(app, 0, true, requests) }
-	}
+	requests <- func(app *player.Player) { nextTrack(app, 0, true, requests) }
 	go (func() {
 		for {
 			evt := termbox.PollEvent()
