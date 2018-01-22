@@ -22,10 +22,9 @@ func (s *Speaker) Paused() bool {
 }
 
 func (s *Speaker) Stop() {
-	if s.Stream == nil {
-		return
+	if s.Stream != nil {
+		s.Stream.Teardown(false)
 	}
-	s.Stream.Teardown(false)
 }
 
 func (s *Speaker) getStream(song Song, res chan bool) (*Stream, error) {
@@ -48,11 +47,9 @@ func (s *Speaker) Play(song Song) (<-chan bool, error) {
 	if err != nil {
 		if stream != nil {
 			stream.Teardown(false)
-			<-q
-			close(q)
 		}
 		s.Stream = nil
-		return q, err
+		return nil, err
 	}
 	s.Stream = stream
 	return q, nil

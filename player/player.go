@@ -75,13 +75,9 @@ func (p *Player) Peek(i int) (Song, error) {
 	return p.songs[j], nil
 }
 
-func (p *Player) Next(i int, force bool) (<-chan bool, error) {
+func (p *Player) Next(i int, force bool) (Song, error) {
 	p.index.Next(i, force)
-	u, err := p.Song()
-	if err != nil {
-		return nil, err
-	}
-	return p.Speaker.Play(u)
+	return p.Song()
 }
 
 func (p *Player) Remove() {

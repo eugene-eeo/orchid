@@ -1,6 +1,19 @@
 package main
 
 import "github.com/mattn/go-runewidth"
+import "github.com/eugene-eeo/hubwub/player"
+
+func play(p *player.Player) (<-chan bool, error) {
+	song, err := p.Song()
+	if err != nil {
+		return nil, err
+	}
+	done, err := p.Speaker.Play(song)
+	if err != nil {
+		return nil, err
+	}
+	return done, nil
+}
 
 func must(err error) {
 	if err != nil {

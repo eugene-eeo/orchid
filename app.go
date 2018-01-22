@@ -7,38 +7,39 @@ import "github.com/eugene-eeo/hubwub/player"
 import "github.com/lucasb-eyer/go-colorful"
 import "github.com/eliukblau/pixterm/ansimage"
 
-func nextTrack(p *player.Player, i int, force bool, q chan func(*player.Player)) func(*player.Player) {
-	return func(*player.Player) {
-		done, err := p.Next(i, force)
+type request func(*player.Player)
+
+func nextTrack(p *player.Player, i int, force bool, q chan request) request {
+	return request(func(*player.Player) {
+		_, err := p.Next(i, force)
 		// check if there is a next song so that we don't
 		// loop infinitely with nothing, since after each
 		// request we make a render call
-		if err == player.NoMoreSongs {
+		if err != nil {
 			return
 		}
-		if err != nil {
-			p.Remove()
-			go func() {
+		done, err := play(p)
+		go (func() {
+			if err != nil {
+				p.Remove()
 				q <- nextTrack(p, 0, true, q)
-			}()
-		}
-		go func() {
-			complete := <-done
-			if complete {
+				return
+			}
+			if <-done {
 				q <- nextTrack(p, 1, false, q)
 			}
-		}()
-	}
+		})()
+	})
 }
 
-func getIndicator(p *player.Player) string {
+func getIndicator(p *player.Player) rune {
 	if p.Speaker.Paused() {
-		return "Ⅱ"
+		return 'Ⅱ'
 	}
 	if p.Shuffle {
-		return "⥮"
+		return '⇋'
 	}
-	return "⏵"
+	return '⏵'
 }
 
 func getImage(sng player.Song) image {
@@ -95,7 +96,7 @@ func main() {
 	defer termbox.Close()
 
 	exit := make(chan struct{})
-	requests := make(chan func(*player.Player))
+	requests := make(chan request)
 	imageQueue := make(chan player.Song, 1)
 
 	go (func() {
@@ -116,7 +117,7 @@ func main() {
 
 	render := func(app *player.Player) {
 		must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
-		color := termbox.Attribute(0x1ff)
+		color := termbox.ColorDefault
 		if app.Repeat {
 			color = termbox.AttrReverse
 		}
@@ -125,7 +126,7 @@ func main() {
 		if err == nil {
 			name = s.Name()
 		}
-		drawName(getIndicator(app)+" "+name, 2, color)
+		drawName(string(getIndicator(app))+" "+name, 2, color)
 		updateQueue(app)
 		must(termbox.Sync())
 		if err == nil {
