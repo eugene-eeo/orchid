@@ -2,12 +2,12 @@
 
 Very tiny music player for my needs. Mostly an excuse for me to learn how
 to use termbox after being inspired by Brandon Rhode's [talk on terminal animations](https://www.youtube.com/watch?v=rrMnmLyYjU8).
-Start it up in a directory where there are MP3 files, and `hubwub` will
+Start it up in a directory where there are MP3 files, and `orchid` will
 do the rest:
 
-    $ go get -u github.com/eugene-eeo/hubwub
+    $ go get -u github.com/eugene-eeo/orchid
     $ cd totally-legit-music
-    $ hubwub
+    $ orchid
 
 Ideally ran in a terminal with size 50x10 and with the excellent [Input Mono](http://input.fontbureau.com/)
 font, although Envy Code R works as well. Note on OSX: for some reason images
