@@ -1,4 +1,4 @@
-# hubwub
+# orchid
 
 Very tiny music player for my needs. Mostly an excuse for me to learn how
 to use termbox after being inspired by Brandon Rhode's [talk on terminal animations](https://www.youtube.com/watch?v=rrMnmLyYjU8).

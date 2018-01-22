@@ -1,7 +1,7 @@
 package main
 
 import "github.com/mattn/go-runewidth"
-import "github.com/eugene-eeo/hubwub/player"
+import "github.com/eugene-eeo/orchid/player"
 
 func play(p *player.Player) (<-chan bool, error) {
 	song, err := p.Song()

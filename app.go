@@ -1,9 +1,11 @@
 package main
 
+import "time"
+import "fmt"
 import "bytes"
 import "os"
 import "github.com/nsf/termbox-go"
-import "github.com/eugene-eeo/hubwub/player"
+import "github.com/eugene-eeo/orchid/player"
 import "github.com/lucasb-eyer/go-colorful"
 import "github.com/eliukblau/pixterm/ansimage"
 
@@ -37,7 +39,7 @@ func getIndicator(p *player.Player) rune {
 		return 'Ⅱ'
 	}
 	if p.Shuffle {
-		return '⇋'
+		return '⥮'
 	}
 	return '⏵'
 }
@@ -108,10 +110,9 @@ func main() {
 				currentSong = sng
 				img = getImage(sng)
 			}
-			termbox.SetCursor(0, 0)
-			must(termbox.Sync())
-			print(img.Render())
-			print("\u001B[?25l")
+			fmt.Print("\033[0;0H")
+			fmt.Print(img.Render())
+			fmt.Print("\u001B[?25l")
 		}
 	})()
 
@@ -134,11 +135,28 @@ func main() {
 		}
 	}
 
+	renderQueue := make(chan *player.Player, 10)
+	go (func() {
+		var app *player.Player
+		changed := false
+		for {
+			select {
+			case app = <-renderQueue:
+				changed = true
+			case <-time.After(50 * time.Millisecond):
+				if changed {
+					changed = false
+					render(app)
+				}
+			}
+		}
+	})()
+
 	go (func() {
 		for {
 			r := <-requests
 			r(app)
-			render(app)
+			renderQueue <- app
 		}
 	})()
 

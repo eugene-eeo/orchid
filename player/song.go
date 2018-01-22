@@ -1,9 +1,10 @@
 package player
 
-import "time"
 import "os"
-import "strings"
 import "path/filepath"
+import "time"
+import "strings"
+import "sync"
 
 import "github.com/faiface/beep"
 import "github.com/faiface/beep/speaker"
@@ -51,20 +52,19 @@ func (s Song) Picture() ([]byte, bool) {
 }
 
 type Stream struct {
-	ctrl     *beep.Ctrl
-	stream   beep.StreamCloser
-	format   beep.Format
-	finished bool
-	done     func(bool)
+	ctrl   *beep.Ctrl
+	stream beep.StreamCloser
+	format beep.Format
+	done   func(bool)
+	once   sync.Once
 }
 
 func NewStream(stream beep.StreamCloser, format beep.Format, done func(bool)) *Stream {
 	return &Stream{
-		stream:   stream,
-		ctrl:     &beep.Ctrl{Streamer: stream},
-		format:   format,
-		done:     done,
-		finished: false,
+		stream: stream,
+		ctrl:   &beep.Ctrl{Streamer: stream},
+		format: format,
+		done:   done,
 	}
 }
 
@@ -73,11 +73,10 @@ func (s *Stream) initSpeaker() error {
 }
 
 func (s *Stream) Teardown(d bool) {
-	if !s.finished {
+	s.once.Do(func() {
 		s.stream.Close()
 		s.done(d)
-		s.finished = true
-	}
+	})
 }
 
 func (s *Stream) Paused() bool {
