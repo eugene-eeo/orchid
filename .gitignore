@@ -1,3 +1,4 @@
 *.jpg
 *.mp3
 ./orchid
+vendor/
