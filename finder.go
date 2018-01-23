@@ -77,10 +77,15 @@ func (f *Finder) Find(q string) []*item {
 	return matchAll(strings.ToLower(q), f.items)
 }
 
+func (f *Finder) Get(i *item) player.Song {
+	return f.songs[i.idx]
+}
+
 type FinderUI struct {
 	finder   *Finder
 	requests chan func(*FinderUI)
 	choice   chan *player.Song
+	input    *Input
 }
 
 func newFinderUIFromPlayer(p *player.Player) *FinderUI {
@@ -89,6 +94,7 @@ func newFinderUIFromPlayer(p *player.Player) *FinderUI {
 		finder:   finder,
 		requests: make(chan func(*FinderUI)),
 		choice:   make(chan *player.Song),
+		input:    newInput(),
 	}
 }
 
@@ -120,11 +126,12 @@ func (f *FinderUI) RenderResults(cursor int, results []*item) {
 	}
 	j := 0
 	for i := start; i < end; i++ {
+		song := f.finder.Get(results[i])
 		color := termbox.ColorDefault
 		if i == cursor {
 			color = termbox.AttrReverse
 		}
-		unicodeCells(f.finder.songs[results[i].idx].Name(), 48, true, func(x int, r rune) {
+		unicodeCells(song.Name(), 48, true, func(x int, r rune) {
 			termbox.SetCell(1+x, 1+j, r, color, termbox.ColorDefault)
 		})
 		j++
@@ -132,17 +139,14 @@ func (f *FinderUI) RenderResults(cursor int, results []*item) {
 }
 
 func (f *FinderUI) HandleKeyStrokes() {
-	query := ""
 	results := f.finder.items
 	cursor := 0
 	exit := false
-
 	for !exit {
 		must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
-		f.RenderQuery(query)
+		f.RenderQuery(f.input.String())
 		f.RenderResults(cursor, results)
 		must(termbox.Sync())
-
 		ev := termbox.PollEvent()
 		switch ev.Key {
 		case termbox.KeyArrowUp:
@@ -158,27 +162,16 @@ func (f *FinderUI) HandleKeyStrokes() {
 			exit = true
 		case termbox.KeyEnter:
 			exit = true
-		case termbox.KeyBackspace2:
-			fallthrough
-		case termbox.KeyBackspace:
-			if len(query) > 0 {
-				query = query[:len(query)-1]
-				results = f.finder.Find(query)
-				cursor = 0
-			}
-		case termbox.KeySpace:
-			query += " "
-			results = f.finder.Find(query)
-			cursor = 0
 		default:
-			query += string(ev.Ch)
-			results = f.finder.Find(query)
+			f.input.Feed(ev)
+			results = f.finder.Find(f.input.String())
 			cursor = 0
 		}
 	}
 	if cursor < len(results) && cursor >= 0 {
-		f.choice <- &f.finder.songs[results[cursor].idx]
-	} else {
-		f.choice <- nil
+		song := f.finder.Get(results[cursor])
+		f.choice <- &song
+		return
 	}
+	f.choice <- nil
 }
