@@ -9,14 +9,13 @@ do the rest:
     $ cd totally-legit-music
     $ orchid
 
-Ideally ran in a terminal with size 50x10 and with the excellent [Input Mono](http://input.fontbureau.com/)
+Ideally ran in a terminal with size 50x10 and with the excellent [Iosevka Term](https://github.com/be5invis/Iosevka)
 font, although Envy Code R works as well. Note on OSX: for some reason images
 are only properly displayed on screen-256 (at least for me). YMMV.
 
-| <img src='./demo1.png' width='300px'>   | <img src='./demo2.png' width='300px'>  |
+| <img src='./screenshots/demo1.png' width='300px'>   | <img src='./screenshots/demo2.png' width='300px'>  |
 |:---------------------------------------:|:--------------------------------------:|
 | Default art for MP3s without album art. | Album art and in Shuffle mode.         |
-
 
 
 ## controls
@@ -30,6 +29,6 @@ are only properly displayed on screen-256 (at least for me). YMMV.
 
 ## todo
 
-- [ ] less hacky way to display images
-- [ ] consider using braille instead of unicode blocks
-- [ ] ansi-parser + tcell?
+- [ ] write tests
+- [ ] source MP3s from multiple directories
+- [ ] extract + display more tags (?)
