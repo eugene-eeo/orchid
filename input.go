@@ -11,9 +11,6 @@ func newInput() *Input {
 }
 
 func (i *Input) Feed(ev termbox.Event) {
-	if ev.Type != termbox.EventKey {
-		return
-	}
 	switch ev.Key {
 	case termbox.KeyBackspace2:
 		fallthrough

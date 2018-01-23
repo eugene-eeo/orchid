@@ -164,6 +164,9 @@ func main() {
 	go (func() {
 		for {
 			evt := termbox.PollEvent()
+			if evt.Type != termbox.EventKey {
+				continue
+			}
 			switch evt.Ch {
 			case 'q':
 				exit <- struct{}{}

@@ -98,14 +98,10 @@ func newFinderUIFromPlayer(p *player.Player) *FinderUI {
 	}
 }
 
-/*
-
- > ________________ 48x1 => 46x1 query
- 1                  48x7
- 2
- ...
-
-*/
+// > ________________ 48x1 => 46x1 query
+// 1                  48x7
+// 2
+// ...
 
 func (f *FinderUI) RenderQuery(query string) {
 	termbox.SetCell(1, 0, '>', termbox.ColorRed, termbox.ColorDefault)
@@ -148,6 +144,9 @@ func (f *FinderUI) HandleKeyStrokes() {
 		f.RenderResults(cursor, results)
 		must(termbox.Sync())
 		ev := termbox.PollEvent()
+		if ev.Type != termbox.EventKey {
+			continue
+		}
 		switch ev.Key {
 		case termbox.KeyArrowUp:
 			if cursor > 0 {
