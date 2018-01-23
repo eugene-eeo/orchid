@@ -46,7 +46,7 @@ func matchAll(query string, haystack []*item) []*item {
 		}
 	}
 	sort.Slice(matching, func(i, j int) bool {
-		return rankMatch(query, matching[i].str) < rankMatch(query, matching[j].str)
+		return rankMatch(query, matching[i].str) > rankMatch(query, matching[j].str)
 	})
 	return matching
 }
