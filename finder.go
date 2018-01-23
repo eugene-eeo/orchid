@@ -110,7 +110,7 @@ func (f *FinderUI) RenderQuery(query string) {
 		termbox.SetCell(3+x, 0, r, termbox.AttrBold, termbox.ColorDefault)
 		m = x
 	})
-	termbox.SetCell(3+m+1, 0, '_', 0xf0, termbox.ColorDefault)
+	termbox.SetCursor(3+m+1, 0)
 }
 
 func (f *FinderUI) RenderResults(cursor int, results []*item) {
@@ -140,8 +140,8 @@ func (f *FinderUI) HandleKeyStrokes() {
 	exit := false
 	for !exit {
 		must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
-		f.RenderQuery(f.input.String())
 		f.RenderResults(cursor, results)
+		f.RenderQuery(f.input.String())
 		must(termbox.Sync())
 		ev := termbox.PollEvent()
 		if ev.Type != termbox.EventKey {
