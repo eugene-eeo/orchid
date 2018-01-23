@@ -94,7 +94,7 @@ func newFinderUIFromPlayer(p *player.Player) *FinderUI {
 /*
 
  > ________________ 48x1 => 46x1 query
- 1                  48x8
+ 1                  48x7
  2
  ...
 
@@ -111,14 +111,22 @@ func (f *FinderUI) RenderQuery(query string) {
 }
 
 func (f *FinderUI) RenderResults(cursor int, results []*item) {
-	for i := 0; i < min(len(results), 8); i++ {
+	start := 0
+	end := min(7, len(results))
+	if cursor > 6 {
+		start = cursor - 6
+		end = cursor + 1
+	}
+	j := 0
+	for i := start; i < end; i++ {
 		color := termbox.ColorDefault
 		if i == cursor {
 			color = termbox.AttrReverse
 		}
 		unicodeCells(results[i].str, 48, true, func(x int, r rune) {
-			termbox.SetCell(1+x, 2+i, r, color, termbox.ColorDefault)
+			termbox.SetCell(1+x, 2+j, r, color, termbox.ColorDefault)
 		})
+		j++
 	}
 }
 
@@ -126,27 +134,26 @@ func (f *FinderUI) HandleKeyStrokes() {
 	query := ""
 	results := f.finder.items
 	cursor := 0
-	for {
+	exit := false
+
+	for !exit {
 		must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
 		f.RenderQuery(query)
 		f.RenderResults(cursor, results)
 		must(termbox.Sync())
+
 		ev := termbox.PollEvent()
 		switch ev.Key {
-		case termbox.KeyArrowDown:
+		case termbox.KeyArrowUp:
 			if cursor > 0 {
 				cursor--
 			}
-		case termbox.KeyArrowUp:
+		case termbox.KeyArrowDown:
 			if cursor < len(results)-1 {
 				cursor++
 			}
 		case termbox.KeyEnter:
-			if cursor < len(results) {
-				f.choice <- &f.finder.songs[results[cursor].idx]
-			} else {
-				f.choice <- nil
-			}
+			exit = true
 		case termbox.KeyBackspace2:
 			fallthrough
 		case termbox.KeyBackspace:
@@ -164,5 +171,10 @@ func (f *FinderUI) HandleKeyStrokes() {
 			results = f.finder.Find(query)
 			cursor = 0
 		}
+	}
+	if cursor < len(results) {
+		f.choice <- &f.finder.songs[results[cursor].idx]
+	} else {
+		f.choice <- nil
 	}
 }
