@@ -26,12 +26,12 @@ func unicodeCells(s string, width int, f func(int, rune)) {
 	R := []rune(s)
 	n := len(R)
 	for i := 0; x <= width; i++ {
-		var r rune
-		if i >= n {
-			r = ' '
-		} else if x == width && n > i {
+		r := ' '
+		if x == width && n > i {
+			// if we are at the final width and string is
+			// too long then end with ellipsis
 			r = '…'
-		} else {
+		} else if i < n {
 			r = R[i]
 		}
 		f(x, r)
