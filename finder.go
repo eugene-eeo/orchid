@@ -1,5 +1,6 @@
 package main
 
+import "strings"
 import "sort"
 import "github.com/eugene-eeo/orchid/player"
 import "github.com/nsf/termbox-go"
@@ -62,7 +63,7 @@ func finderFromPlayer(p *player.Player) *Finder {
 	for i, song := range all {
 		songs[i] = song
 		items[i] = &item{
-			str: song.Name(),
+			str: strings.ToLower(song.Name()),
 			idx: i,
 		}
 	}
@@ -73,7 +74,7 @@ func finderFromPlayer(p *player.Player) *Finder {
 }
 
 func (f *Finder) Find(q string) []*item {
-	return matchAll(q, f.items)
+	return matchAll(strings.ToLower(q), f.items)
 }
 
 type FinderUI struct {
@@ -101,13 +102,13 @@ func newFinderUIFromPlayer(p *player.Player) *FinderUI {
 */
 
 func (f *FinderUI) RenderQuery(query string) {
-	termbox.SetCell(1, 1, '>', termbox.ColorRed, termbox.ColorDefault)
+	termbox.SetCell(1, 0, '>', termbox.ColorRed, termbox.ColorDefault)
 	m := -1
 	unicodeCells(query, 46, false, func(x int, r rune) {
-		termbox.SetCell(3+x, 1, r, termbox.AttrBold, termbox.ColorDefault)
+		termbox.SetCell(3+x, 0, r, termbox.AttrBold, termbox.ColorDefault)
 		m = x
 	})
-	termbox.SetCell(3+m+1, 1, '_', 0xf0, termbox.ColorDefault)
+	termbox.SetCell(3+m+1, 0, '_', 0xf0, termbox.ColorDefault)
 }
 
 func (f *FinderUI) RenderResults(cursor int, results []*item) {
@@ -123,8 +124,8 @@ func (f *FinderUI) RenderResults(cursor int, results []*item) {
 		if i == cursor {
 			color = termbox.AttrReverse
 		}
-		unicodeCells(results[i].str, 48, true, func(x int, r rune) {
-			termbox.SetCell(1+x, 2+j, r, color, termbox.ColorDefault)
+		unicodeCells(f.finder.songs[results[i].idx].Name(), 48, true, func(x int, r rune) {
+			termbox.SetCell(1+x, 1+j, r, color, termbox.ColorDefault)
 		})
 		j++
 	}
@@ -152,6 +153,9 @@ func (f *FinderUI) HandleKeyStrokes() {
 			if cursor < len(results)-1 {
 				cursor++
 			}
+		case termbox.KeyEsc:
+			cursor = -1
+			exit = true
 		case termbox.KeyEnter:
 			exit = true
 		case termbox.KeyBackspace2:
@@ -172,7 +176,7 @@ func (f *FinderUI) HandleKeyStrokes() {
 			cursor = 0
 		}
 	}
-	if cursor < len(results) {
+	if cursor < len(results) && cursor >= 0 {
 		f.choice <- &f.finder.songs[results[cursor].idx]
 	} else {
 		f.choice <- nil
