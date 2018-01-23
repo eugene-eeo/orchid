@@ -21,20 +21,19 @@ func must(err error) {
 	}
 }
 
-func fit(a string, width int) string {
-	if runewidth.StringWidth(a) > width {
-		return a[:29] + "…"
-	}
-	for runewidth.StringWidth(a) < width {
-		a = a + " "
-	}
-	return a
-}
-
-func unicodeCells(s string, f func(int, rune)) {
+func unicodeCells(s string, width int, f func(int, rune)) {
 	x := 0
-	for _, c := range s {
-		r := rune(c)
+	R := []rune(s)
+	n := len(R)
+	for i := 0; x <= width; i++ {
+		var r rune
+		if i >= n {
+			r = ' '
+		} else if x == width && n > i {
+			r = '…'
+		} else {
+			r = R[i]
+		}
 		f(x, r)
 		x += runewidth.RuneWidth(r)
 	}

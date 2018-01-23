@@ -58,7 +58,7 @@ func getImage(sng player.Song) image {
 }
 
 func drawName(name string, y int, color termbox.Attribute) {
-	unicodeCells(fit(name, 30), func(dx int, r rune) {
+	unicodeCells(name, 30, func(dx int, r rune) {
 		termbox.SetCell(18+dx, y, r, color, termbox.ColorDefault)
 	})
 }
