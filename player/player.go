@@ -87,3 +87,26 @@ func (p *Player) Remove() {
 func (p *Player) Toggle() {
 	p.Speaker.Toggle()
 }
+
+func (p *Player) SetCurrent(s Song) {
+	i := -1
+	p.order.Each(func(j int) bool {
+		if p.songs[j] == s {
+			i = j
+			return false
+		}
+		return true
+	})
+	if i != -1 {
+		p.order.cursor = i
+	}
+}
+
+func (p *Player) Songs() []Song {
+	a := []Song{}
+	p.order.Each(func(i int) bool {
+		a = append(a, p.songs[i])
+		return true
+	})
+	return a
+}

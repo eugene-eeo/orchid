@@ -11,8 +11,8 @@ import "github.com/eliukblau/pixterm/ansimage"
 
 type request func(*player.Player)
 
-func nextTrack(p *player.Player, i int, force bool, q chan request) request {
-	return request(func(*player.Player) {
+func nextTrack(i int, force bool, q chan request) request {
+	return request(func(p *player.Player) {
 		_, err := p.Next(i, force)
 		// check if there is a next song so that we don't
 		// loop infinitely with nothing, since after each
@@ -21,14 +21,14 @@ func nextTrack(p *player.Player, i int, force bool, q chan request) request {
 			return
 		}
 		done, err := play(p)
+		if err != nil {
+			p.Remove()
+			go func() { q <- nextTrack(0, true, q) }()
+			return
+		}
 		go (func() {
-			if err != nil {
-				p.Remove()
-				q <- nextTrack(p, 0, true, q)
-				return
-			}
 			if <-done {
-				q <- nextTrack(p, 1, false, q)
+				q <- nextTrack(1, false, q)
 			}
 		})()
 	})
@@ -58,7 +58,7 @@ func getImage(sng player.Song) image {
 }
 
 func drawName(name string, y int, color termbox.Attribute) {
-	unicodeCells(name, 30, func(dx int, r rune) {
+	unicodeCells(name, 30, true, func(dx int, r rune) {
 		termbox.SetCell(18+dx, y, r, color, termbox.ColorDefault)
 	})
 }
@@ -160,7 +160,7 @@ func main() {
 		}
 	})()
 
-	requests <- nextTrack(app, 0, true, requests)
+	requests <- nextTrack(0, true, requests)
 	go (func() {
 		for {
 			evt := termbox.PollEvent()
@@ -169,13 +169,26 @@ func main() {
 				exit <- struct{}{}
 				break
 			case 'n':
-				requests <- nextTrack(app, 1, true, requests)
+				requests <- nextTrack(1, true, requests)
 			case 'p':
-				requests <- nextTrack(app, -1, true, requests)
+				requests <- nextTrack(-1, true, requests)
 			case 's':
 				requests <- func(h *player.Player) { h.ToggleShuffle() }
 			case 'r':
 				requests <- func(h *player.Player) { h.ToggleRepeat() }
+			case 'f':
+				hang := make(chan struct{})
+				requests <- func(h *player.Player) {
+					f := newFinderUIFromPlayer(h)
+					go f.HandleKeyStrokes()
+					song := <-f.choice
+					if song != nil {
+						h.SetCurrent(*song)
+						go func() { requests <- nextTrack(0, true, requests) }()
+					}
+					hang <- struct{}{}
+				}
+				<-hang
 			}
 			if evt.Key == termbox.KeySpace {
 				requests <- func(h *player.Player) { h.Toggle() }

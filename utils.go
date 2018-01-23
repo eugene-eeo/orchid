@@ -3,6 +3,24 @@ package main
 import "github.com/mattn/go-runewidth"
 import "github.com/eugene-eeo/orchid/player"
 
+const DefaultImage string = "\u001B[38;5;147m" + `        _
+    _ (` + " - " + `) _
+  /` + "` '.\\ /.' `" + `\
+  ` + "``" + `'-.,=,.-'` + "``" + `
+    .'//v\\'.
+   (_/\ " /\_)
+       '-'`
+
+type image interface {
+	Render() string
+}
+
+type defaultImage struct{}
+
+func (d *defaultImage) Render() string {
+	return DefaultImage
+}
+
 func play(p *player.Player) (<-chan bool, error) {
 	song, err := p.Song()
 	if err != nil {
@@ -21,7 +39,7 @@ func must(err error) {
 	}
 }
 
-func unicodeCells(s string, width int, f func(int, rune)) {
+func unicodeCells(s string, width int, fill bool, f func(int, rune)) {
 	x := 0
 	R := []rune(s)
 	n := len(R)
@@ -33,6 +51,8 @@ func unicodeCells(s string, width int, f func(int, rune)) {
 			r = '…'
 		} else if i < n {
 			r = R[i]
+		} else if !fill {
+			break
 		}
 		f(x, r)
 		x += runewidth.RuneWidth(r)

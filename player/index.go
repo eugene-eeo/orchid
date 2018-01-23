@@ -94,3 +94,11 @@ func (s *Seq) Pop() {
 		s.seq = remove(s.cursor, s.seq)
 	}
 }
+
+func (s *Seq) Each(f func(int) bool) {
+	for i := 0; i < len(s.seq); i++ {
+		if !f(s.Peek(i)) {
+			break
+		}
+	}
+}

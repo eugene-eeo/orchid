@@ -25,6 +25,7 @@ are only properly displayed on screen-256 (at least for me). YMMV.
 - `s` shuffle queue
 - `n` next track
 - `p` prev track
+- `f` find mode
 - `q` quit
 
 ## todo
