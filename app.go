@@ -141,11 +141,9 @@ func main() {
 			render(app)
 		})
 		for {
-			select {
-			case req := <-requests:
-				req(app)
-				after.Reset(t)
-			}
+			req := <-requests
+			req(app)
+			after.Reset(t)
 		}
 	})()
 
@@ -159,7 +157,6 @@ func main() {
 			switch evt.Ch {
 			case 'q':
 				exit <- struct{}{}
-				break
 			case 'n':
 				requests <- nextTrack(1, true, requests)
 			case 'p':
