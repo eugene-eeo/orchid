@@ -8,10 +8,10 @@ func max(a, b int) int {
 }
 
 func min(a, b int) int {
-	if a > b {
-		return b
+	if a < b {
+		return a
 	}
-	return a
+	return b
 }
 
 type Viewbox struct {
@@ -31,12 +31,14 @@ func NewViewBox(max, height int) *Viewbox {
 }
 
 func (v *Viewbox) Update(i int) (int, int) {
-	if i < v.lo {
-		v.lo = i
-		v.hi = min(v.max, i+v.height)
-	} else if i >= v.hi {
-		v.lo = i - v.height + 1
-		v.hi = i + 1
+	if v.lo < v.hi {
+		if i < v.lo {
+			v.lo = i
+			v.hi = min(v.max, i+v.height)
+		} else if i >= v.hi {
+			v.lo = i - v.height + 1
+			v.hi = i + 1
+		}
 	}
 	return v.lo, v.hi
 }

@@ -3,29 +3,54 @@ package elems
 import "github.com/nsf/termbox-go"
 
 type Input struct {
-	buf string
+	buf []rune
+	idx int
 }
 
 func NewInput() *Input {
-	return &Input{buf: ""}
+	return &Input{[]rune{}, 0}
+}
+
+func (i *Input) Insert(r rune) {
+	i.buf = append(i.buf, r)
+	copy(i.buf[i.idx+1:], i.buf[i.idx:])
+	i.buf[i.idx] = r
+	i.idx++
+}
+
+func (i *Input) Delete() {
+	if i.idx == 0 || len(i.buf) == 0 {
+		return
+	}
+	i.idx--
+	i.buf = append(i.buf[:i.idx], i.buf[i.idx+1:]...)
 }
 
 func (i *Input) Feed(ev termbox.Event) {
 	switch ev.Key {
+	case termbox.KeyArrowLeft:
+		if i.idx > 0 {
+			i.idx--
+		}
+	case termbox.KeyArrowRight:
+		if i.idx < len(i.buf) {
+			i.idx++
+		}
 	case termbox.KeyBackspace2:
 		fallthrough
 	case termbox.KeyBackspace:
-		if len(i.buf) == 0 {
-			return
-		}
-		i.buf = i.buf[:len(i.buf)-1]
+		i.Delete()
 	case termbox.KeySpace:
-		i.buf += " "
+		i.Insert(' ')
 	default:
-		i.buf += string(ev.Ch)
+		i.Insert(ev.Ch)
 	}
 }
 
 func (i *Input) String() string {
-	return i.buf
+	return string(i.buf)
+}
+
+func (i *Input) Cursor() int {
+	return i.idx
 }

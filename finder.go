@@ -119,12 +119,10 @@ func newFinderUIFromPlayer(p *player.Player) *FinderUI {
 func (f *FinderUI) RenderQuery() {
 	query := f.input.String()
 	termbox.SetCell(1, 0, '>', termbox.ColorRed, termbox.ColorDefault)
-	m := -1
 	unicodeCells(query, 46, false, func(x int, r rune) {
 		termbox.SetCell(3+x, 0, r, termbox.AttrBold, termbox.ColorDefault)
-		m = x
 	})
-	termbox.SetCursor(3+m+1, 0)
+	termbox.SetCursor(3+f.input.Cursor(), 0)
 }
 
 func (f *FinderUI) RenderResults() {
@@ -171,6 +169,8 @@ func (f *FinderUI) Loop() {
 			if f.cursor > 0 {
 				f.cursor--
 			}
+		case termbox.KeyTab:
+			fallthrough
 		case termbox.KeyArrowDown:
 			if f.cursor < len(f.results)-1 {
 				f.cursor++
