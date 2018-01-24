@@ -129,7 +129,7 @@ func main() {
 		drawName(string(getIndicator(app))+" "+name, 2, color)
 		updateQueue(app)
 		must(termbox.Sync())
-		if err == nil {
+		if s != nil {
 			imageQueue <- s
 		}
 	}
