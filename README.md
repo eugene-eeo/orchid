@@ -13,19 +13,22 @@ Ideally ran in a terminal with size 50x10 and with the excellent [Iosevka Term](
 font, although Envy Code R works as well. Note on OSX: for some reason images
 are only properly displayed on screen-256 (at least for me). YMMV.
 
-| <img src='./screenshots/demo1.png' width='300px'>   | <img src='./screenshots/demo2.png' width='300px'>  |
-|:---------------------------------------:|:--------------------------------------:|
-| Default art for MP3s without album art. | Album art and in Shuffle mode.         |
+## screenshots
 
+[<img src='./screenshots/demo1.png' width='30%'>]()
+[<img src='./screenshots/demo2.png' width='30%'>]()
+[<img src='./screenshots/demo3.png' width='30%'>]()
 
 ## controls
 
 - `r` toggle repeat song/playlist
 - `<space>` pause/play
-- `s` shuffle queue
+- `f` find mode
+  - `<enter>` confirm selection
+  - `<esc>` cancel
+- `s` toggle shuffle mode
 - `n` next track
 - `p` prev track
-- `f` find mode
 - `q` quit
 
 ## todo
