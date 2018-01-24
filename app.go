@@ -12,11 +12,11 @@ type request func(*player.Player)
 
 func nextTrack(i int, force bool, q chan request) request {
 	return request(func(p *player.Player) {
-		_, err := p.Next(i, force)
+		s := p.Next(i, force)
 		// check if there is a next song so that we don't
 		// loop infinitely with nothing, since after each
 		// request we make a render call
-		if err != nil {
+		if s == nil {
 			return
 		}
 		done, err := play(p)
@@ -43,7 +43,7 @@ func getIndicator(p *player.Player) rune {
 	return '⏵'
 }
 
-func getImage(sng player.Song) image {
+func getImage(sng *player.Song) image {
 	r, ok := sng.Picture()
 	if !ok {
 		return &defaultImage{}
@@ -64,14 +64,14 @@ func drawName(name string, y int, color termbox.Attribute) {
 
 func updateQueue(app *player.Player) {
 	for i := 1; i <= 3; i++ {
-		s, err := app.Peek(i)
-		if err != nil {
+		s := app.Peek(i)
+		if s == nil {
 			break
 		}
 		drawName(s.Name(), 2+i, 0xf0)
 	}
-	s, err := app.Peek(-1)
-	if err != nil {
+	s := app.Peek(-1)
+	if s == nil {
 		return
 	}
 	drawName(s.Name(), 1, 0xf0)
@@ -98,10 +98,10 @@ func main() {
 
 	exit := make(chan struct{})
 	requests := make(chan request)
-	imageQueue := make(chan player.Song, 10)
+	imageQueue := make(chan *player.Song, 10)
 
 	go (func() {
-		var currentSong player.Song = player.Song("")
+		var currentSong *player.Song = nil
 		var img image = &defaultImage{}
 		for {
 			sng := <-imageQueue
@@ -121,9 +121,9 @@ func main() {
 		if app.Repeat {
 			color = termbox.AttrReverse
 		}
-		s, err := app.Song()
+		s := app.Song()
 		name := "<No songs>"
-		if err == nil {
+		if s != nil {
 			name = s.Name()
 		}
 		drawName(string(getIndicator(app))+" "+name, 2, color)
@@ -167,7 +167,7 @@ func main() {
 					go f.Loop()
 					song := <-f.choice
 					if song != nil {
-						h.SetCurrent(*song)
+						h.SetCurrent(song)
 						go func() { requests <- nextTrack(0, true, requests) }()
 					}
 					hang <- struct{}{}
@@ -175,7 +175,7 @@ func main() {
 				<-hang
 			}
 			if evt.Key == termbox.KeySpace {
-				requests <- func(h *player.Player) { h.Toggle() }
+				requests <- func(h *player.Player) { h.Speaker.Toggle() }
 			}
 		}
 	})()

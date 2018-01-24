@@ -22,9 +22,9 @@ func (d *defaultImage) Render() string {
 }
 
 func play(p *player.Player) (<-chan bool, error) {
-	song, err := p.Song()
-	if err != nil {
-		return nil, err
+	song := p.Song()
+	if song == nil {
+		return nil, player.NoMoreSongs
 	}
 	done, err := p.Speaker.Play(song)
 	if err != nil {

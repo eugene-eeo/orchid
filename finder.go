@@ -61,14 +61,12 @@ func matchAll(query string, haystack []*item) []*item {
 
 type Finder struct {
 	items []*item
-	songs []player.Song
+	songs []*player.Song
 }
 
 func finderFromPlayer(p *player.Player) *Finder {
-	songs := make([]player.Song, len(p.Songs))
 	items := make([]*item, len(p.Songs))
 	for i, song := range p.Songs {
-		songs[i] = song
 		items[i] = &item{
 			str: strings.ToLower(song.Name()),
 			idx: i,
@@ -76,7 +74,7 @@ func finderFromPlayer(p *player.Player) *Finder {
 	}
 	return &Finder{
 		items: items,
-		songs: songs,
+		songs: p.Songs,
 	}
 }
 
@@ -84,7 +82,7 @@ func (f *Finder) Find(q string) []*item {
 	return matchAll(strings.ToLower(q), f.items)
 }
 
-func (f *Finder) Get(i *item) player.Song {
+func (f *Finder) Get(i *item) *player.Song {
 	return f.songs[i.idx]
 }
 
@@ -156,8 +154,7 @@ func (f *FinderUI) Choice() *player.Song {
 	if len(f.results) == 0 || f.cursor < 0 {
 		return nil
 	}
-	song := f.finder.Get(f.results[f.cursor])
-	return &song
+	return f.finder.Get(f.results[f.cursor])
 }
 
 func (f *FinderUI) Loop() {

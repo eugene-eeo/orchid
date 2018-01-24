@@ -13,15 +13,15 @@ import "github.com/dhowden/tag"
 
 type Song string
 
-func (s Song) Name() string {
+func (s *Song) Name() string {
 	return strings.TrimSuffix(
-		filepath.Base(string(s)),
-		filepath.Ext(string(s)),
+		filepath.Base(string(*s)),
+		filepath.Ext(string(*s)),
 	)
 }
 
-func (s Song) Stream(done func(graceful bool)) (*Stream, error) {
-	f, err := os.Open(string(s))
+func (s *Song) Stream(done func(graceful bool)) (*Stream, error) {
+	f, err := os.Open(string(*s))
 	if err != nil {
 		return nil, err
 	}
@@ -35,8 +35,8 @@ func (s Song) Stream(done func(graceful bool)) (*Stream, error) {
 	}), nil
 }
 
-func (s Song) Picture() ([]byte, bool) {
-	f, err := os.Open(string(s))
+func (s *Song) Picture() ([]byte, bool) {
+	f, err := os.Open(string(*s))
 	if err != nil {
 		return nil, false
 	}

@@ -25,7 +25,7 @@ type Viewbox struct {
 }
 
 // NewViewbox returns a new Viewbox.
-func NewViewBox(max, height int) *Viewbox {
+func NewViewbox(max, height int) *Viewbox {
 	return &Viewbox{
 		lo:     0,
 		hi:     min(max, height),
