@@ -26,8 +26,12 @@ func (i *Input) Delete() {
 	i.buf = append(i.buf[:i.idx], i.buf[i.idx+1:]...)
 }
 
-func (i *Input) Feed(ev termbox.Event) {
-	switch ev.Key {
+func (i *Input) Feed(key termbox.Key, ch rune, mod termbox.Modifier) {
+	if ch != 0 && mod == 0 {
+		i.Insert(ch)
+		return
+	}
+	switch key {
 	case termbox.KeyArrowLeft:
 		if i.idx > 0 {
 			i.idx--
@@ -42,8 +46,6 @@ func (i *Input) Feed(ev termbox.Event) {
 		i.Delete()
 	case termbox.KeySpace:
 		i.Insert(' ')
-	default:
-		i.Insert(ev.Ch)
 	}
 }
 

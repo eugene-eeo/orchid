@@ -119,10 +119,15 @@ func newFinderUIFromPlayer(p *player.Player) *FinderUI {
 func (f *FinderUI) RenderQuery() {
 	query := f.input.String()
 	termbox.SetCell(1, 0, '>', termbox.ColorRed, termbox.ColorDefault)
+	m := f.input.Cursor()
+	u := ' '
 	unicodeCells(query, 46, false, func(x int, r rune) {
-		termbox.SetCell(3+x, 0, r, termbox.AttrBold, termbox.ColorDefault)
+		termbox.SetCell(3+x, 0, r, termbox.ColorDefault, termbox.ColorDefault)
+		if x == f.input.Cursor() {
+			u = r
+		}
 	})
-	termbox.SetCursor(3+f.input.Cursor(), 0)
+	termbox.SetCell(3+m, 0, u, termbox.AttrReverse, termbox.ColorDefault)
 }
 
 func (f *FinderUI) RenderResults() {
@@ -170,7 +175,11 @@ func (f *FinderUI) Loop() {
 				f.cursor--
 			}
 		case termbox.KeyTab:
-			fallthrough
+			if f.cursor < len(f.results)-1 {
+				f.cursor++
+			} else {
+				f.cursor = 0
+			}
 		case termbox.KeyArrowDown:
 			if f.cursor < len(f.results)-1 {
 				f.cursor++
@@ -181,7 +190,7 @@ func (f *FinderUI) Loop() {
 		case termbox.KeyEnter:
 			exit = true
 		default:
-			f.input.Feed(ev)
+			f.input.Feed(ev.Key, ev.Ch, ev.Mod)
 			f.results = f.finder.Find(f.input.String())
 			f.viewbox = elems.NewViewBox(len(f.results), 7)
 			f.cursor = 0
