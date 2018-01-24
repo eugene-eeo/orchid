@@ -1,6 +1,5 @@
 package main
 
-import "time"
 import "fmt"
 import "bytes"
 import "os"
@@ -99,7 +98,7 @@ func main() {
 
 	exit := make(chan struct{})
 	requests := make(chan request)
-	imageQueue := make(chan player.Song, 1)
+	imageQueue := make(chan player.Song, 10)
 
 	go (func() {
 		var currentSong player.Song = player.Song("")
@@ -136,14 +135,10 @@ func main() {
 	}
 
 	go (func() {
-		t := 5 * time.Millisecond
-		after := time.AfterFunc(t, func() {
-			render(app)
-		})
 		for {
 			req := <-requests
 			req(app)
-			after.Reset(t)
+			render(app)
 		}
 	})()
 
