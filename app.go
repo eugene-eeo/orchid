@@ -90,7 +90,6 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
-	app := player.NewPlayer(songs)
 
 	must(termbox.Init())
 	termbox.SetOutputMode(termbox.Output256)
@@ -135,6 +134,7 @@ func main() {
 	}
 
 	go (func() {
+		app := player.NewPlayer(songs)
 		for {
 			req := <-requests
 			req(app)
