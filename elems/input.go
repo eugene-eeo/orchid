@@ -1,4 +1,4 @@
-package main
+package elems
 
 import "github.com/nsf/termbox-go"
 
@@ -6,7 +6,7 @@ type Input struct {
 	buf string
 }
 
-func newInput() *Input {
+func NewInput() *Input {
 	return &Input{buf: ""}
 }
 

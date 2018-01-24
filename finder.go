@@ -3,6 +3,7 @@ package main
 import "strings"
 import "sort"
 import "github.com/eugene-eeo/orchid/player"
+import "github.com/eugene-eeo/orchid/elems"
 import "github.com/nsf/termbox-go"
 
 func min(a, b int) int {
@@ -90,9 +91,12 @@ func (f *Finder) Get(i *item) player.Song {
 
 type FinderUI struct {
 	finder   *Finder
-	input    *Input
 	requests chan func(*FinderUI)
 	choice   chan *player.Song
+	results  []*item
+	input    *elems.Input
+	viewbox  *elems.Viewbox
+	cursor   int
 }
 
 func newFinderUIFromPlayer(p *player.Player) *FinderUI {
@@ -101,7 +105,10 @@ func newFinderUIFromPlayer(p *player.Player) *FinderUI {
 		finder:   finder,
 		requests: make(chan func(*FinderUI)),
 		choice:   make(chan *player.Song),
-		input:    newInput(),
+		results:  finder.items,
+		input:    elems.NewInput(),
+		viewbox:  elems.NewViewBox(len(finder.items), 7),
+		cursor:   0,
 	}
 }
 
@@ -110,7 +117,8 @@ func newFinderUIFromPlayer(p *player.Player) *FinderUI {
 // 2
 // ...
 
-func (f *FinderUI) RenderQuery(query string) {
+func (f *FinderUI) RenderQuery() {
+	query := f.input.String()
 	termbox.SetCell(1, 0, '>', termbox.ColorRed, termbox.ColorDefault)
 	m := -1
 	unicodeCells(query, 46, false, func(x int, r rune) {
@@ -120,22 +128,12 @@ func (f *FinderUI) RenderQuery(query string) {
 	termbox.SetCursor(3+m+1, 0)
 }
 
-func (f *FinderUI) RenderResults(cursor int, results []*item, lo, hi int) (int, int) {
-	if lo == hi {
-		lo = 0
-		hi = min(len(results), 7)
-	} else if cursor < lo {
-		lo = cursor
-		hi = min(cursor+7, len(results))
-	} else if cursor >= hi {
-		lo = cursor - 6
-		hi = cursor + 1
-	}
+func (f *FinderUI) RenderResults() {
 	j := 0
-	for i := lo; i < hi; i++ {
-		song := f.finder.Get(results[i])
+	for i := f.viewbox.Lo(); i < f.viewbox.Hi(); i++ {
+		song := f.finder.Get(f.results[i])
 		color := termbox.ColorDefault
-		if i == cursor {
+		if i == f.cursor {
 			color = termbox.AttrReverse
 		}
 		unicodeCells(song.Name(), 48, true, func(x int, r rune) {
@@ -143,50 +141,52 @@ func (f *FinderUI) RenderResults(cursor int, results []*item, lo, hi int) (int, 
 		})
 		j++
 	}
-	return lo, hi
+}
+
+func (f *FinderUI) Render() {
+	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
+	f.RenderResults()
+	f.RenderQuery()
+	must(termbox.Sync())
+}
+
+func (f *FinderUI) Choice() *player.Song {
+	if len(f.results) == 0 || f.cursor < 0 {
+		return nil
+	}
+	song := f.finder.Get(f.results[f.cursor])
+	return &song
 }
 
 func (f *FinderUI) Loop() {
-	results := f.finder.items
-	cursor := 0
 	exit := false
-	lo := 0
-	hi := 0
 	for !exit {
-		must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
-		lo, hi = f.RenderResults(cursor, results, lo, hi)
-		f.RenderQuery(f.input.String())
-		must(termbox.Sync())
+		f.viewbox.Update(f.cursor)
+		f.Render()
 		ev := termbox.PollEvent()
 		if ev.Type != termbox.EventKey {
 			continue
 		}
 		switch ev.Key {
 		case termbox.KeyArrowUp:
-			if cursor > 0 {
-				cursor--
+			if f.cursor > 0 {
+				f.cursor--
 			}
 		case termbox.KeyArrowDown:
-			if cursor < len(results)-1 {
-				cursor++
+			if f.cursor < len(f.results)-1 {
+				f.cursor++
 			}
 		case termbox.KeyEsc:
-			cursor = -1
+			f.cursor = -1
 			exit = true
 		case termbox.KeyEnter:
 			exit = true
 		default:
 			f.input.Feed(ev)
-			results = f.finder.Find(f.input.String())
-			cursor = 0
-			lo = 0
-			hi = 0
+			f.results = f.finder.Find(f.input.String())
+			f.viewbox = elems.NewViewBox(len(f.results), 7)
+			f.cursor = 0
 		}
 	}
-	if cursor < len(results) && cursor >= 0 {
-		song := f.finder.Get(results[cursor])
-		f.choice <- &song
-		return
-	}
-	f.choice <- nil
+	f.choice <- f.Choice()
 }
