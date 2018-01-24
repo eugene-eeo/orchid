@@ -17,33 +17,25 @@ func min(a, b int) int {
 type Viewbox struct {
 	lo     int
 	hi     int
-	Max    int
-	Height int
+	max    int
+	height int
 }
 
 func NewViewBox(max, height int) *Viewbox {
 	return &Viewbox{
 		lo:     0,
 		hi:     min(max, height),
-		Max:    max,
-		Height: height,
+		max:    max,
+		height: height,
 	}
 }
 
-func (v *Viewbox) Reset() {
-	v.lo = 0
-	v.hi = min(v.Max, v.Height)
-}
-
 func (v *Viewbox) Update(i int) (int, int) {
-	if v.lo == v.hi {
-		v.lo = 0
-		v.hi = min(v.Max, v.Height)
-	} else if i < v.lo {
+	if i < v.lo {
 		v.lo = i
-		v.hi = min(v.Max, i+v.Height)
+		v.hi = min(v.max, i+v.height)
 	} else if i >= v.hi {
-		v.lo = i - v.Height + 1
+		v.lo = i - v.height + 1
 		v.hi = i + 1
 	}
 	return v.lo, v.hi
