@@ -183,7 +183,7 @@ func main() {
 				hang := make(chan struct{})
 				requests <- func(h *player.Player) {
 					f := newFinderUIFromPlayer(h)
-					go f.HandleKeyStrokes()
+					go f.Loop()
 					song := <-f.choice
 					if song != nil {
 						h.SetCurrent(*song)

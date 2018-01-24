@@ -12,6 +12,13 @@ func min(a, b int) int {
 	return b
 }
 
+func max(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 type item struct {
 	str string
 	idx int
@@ -83,9 +90,9 @@ func (f *Finder) Get(i *item) player.Song {
 
 type FinderUI struct {
 	finder   *Finder
+	input    *Input
 	requests chan func(*FinderUI)
 	choice   chan *player.Song
-	input    *Input
 }
 
 func newFinderUIFromPlayer(p *player.Player) *FinderUI {
@@ -113,15 +120,19 @@ func (f *FinderUI) RenderQuery(query string) {
 	termbox.SetCursor(3+m+1, 0)
 }
 
-func (f *FinderUI) RenderResults(cursor int, results []*item) {
-	start := 0
-	end := min(7, len(results))
-	if cursor > 6 {
-		start = cursor - 6
-		end = cursor + 1
+func (f *FinderUI) RenderResults(cursor int, results []*item, lo, hi int) (int, int) {
+	if lo == hi {
+		lo = 0
+		hi = min(len(results), 7)
+	} else if cursor < lo {
+		lo = cursor
+		hi = min(cursor+7, len(results))
+	} else if cursor >= hi {
+		lo = cursor - 6
+		hi = cursor + 1
 	}
 	j := 0
-	for i := start; i < end; i++ {
+	for i := lo; i < hi; i++ {
 		song := f.finder.Get(results[i])
 		color := termbox.ColorDefault
 		if i == cursor {
@@ -132,15 +143,18 @@ func (f *FinderUI) RenderResults(cursor int, results []*item) {
 		})
 		j++
 	}
+	return lo, hi
 }
 
-func (f *FinderUI) HandleKeyStrokes() {
+func (f *FinderUI) Loop() {
 	results := f.finder.items
 	cursor := 0
 	exit := false
+	lo := 0
+	hi := 0
 	for !exit {
 		must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
-		f.RenderResults(cursor, results)
+		lo, hi = f.RenderResults(cursor, results, lo, hi)
 		f.RenderQuery(f.input.String())
 		must(termbox.Sync())
 		ev := termbox.PollEvent()
@@ -165,6 +179,8 @@ func (f *FinderUI) HandleKeyStrokes() {
 			f.input.Feed(ev)
 			results = f.finder.Find(f.input.String())
 			cursor = 0
+			lo = 0
+			hi = 0
 		}
 	}
 	if cursor < len(results) && cursor >= 0 {
