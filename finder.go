@@ -106,7 +106,7 @@ func newFinderUIFromPlayer(p *player.Player) *FinderUI {
 		choice:   make(chan *player.Song),
 		results:  finder.items,
 		input:    elems.NewInput(),
-		viewbox:  elems.NewViewBox(len(finder.items), 7),
+		viewbox:  elems.NewViewbox(len(finder.items), 7),
 		cursor:   0,
 	}
 }
@@ -192,7 +192,7 @@ func (f *FinderUI) Loop() {
 		default:
 			f.input.Feed(ev.Key, ev.Ch, ev.Mod)
 			f.results = f.finder.Find(f.input.String())
-			f.viewbox = elems.NewViewBox(len(f.results), 7)
+			f.viewbox = elems.NewViewbox(len(f.results), 7)
 			f.cursor = 0
 		}
 	}
