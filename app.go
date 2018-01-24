@@ -135,28 +135,17 @@ func main() {
 		}
 	}
 
-	renderQueue := make(chan *player.Player, 10)
 	go (func() {
-		var app *player.Player
-		changed := false
+		t := 5 * time.Millisecond
+		after := time.AfterFunc(t, func() {
+			render(app)
+		})
 		for {
 			select {
-			case app = <-renderQueue:
-				changed = true
-			case <-time.After(50 * time.Millisecond):
-				if changed {
-					changed = false
-					render(app)
-				}
+			case req := <-requests:
+				req(app)
+				after.Reset(t)
 			}
-		}
-	})()
-
-	go (func() {
-		for {
-			r := <-requests
-			r(app)
-			renderQueue <- app
 		}
 	})()
 
