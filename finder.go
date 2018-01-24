@@ -65,10 +65,9 @@ type Finder struct {
 }
 
 func finderFromPlayer(p *player.Player) *Finder {
-	all := p.Songs()
-	songs := make([]player.Song, len(all))
-	items := make([]*item, len(all))
-	for i, song := range all {
+	songs := make([]player.Song, len(p.Songs))
+	items := make([]*item, len(p.Songs))
+	for i, song := range p.Songs {
 		songs[i] = song
 		items[i] = &item{
 			str: strings.ToLower(song.Name()),
