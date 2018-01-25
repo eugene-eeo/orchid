@@ -101,14 +101,17 @@ func (p *Player) Song() *Song {
 }
 
 func (p *Player) Peek(i int) *Song {
-	j := mod(p.curr+i, len(p.Songs))
 	if len(p.Songs) == 0 {
 		return nil
 	}
+	j := mod(p.curr+i, len(p.Songs))
 	return p.Songs[j]
 }
 
 func (p *Player) Next(i int, force bool) *Song {
+	if len(p.Songs) == 0 {
+		return nil
+	}
 	if !p.Repeat || force {
 		p.curr = mod(p.curr+i, len(p.Songs))
 	}
