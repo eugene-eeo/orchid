@@ -27,6 +27,12 @@ func remove(i int, xs []*Song) []*Song {
 	return append(xs[:i], xs[i+1:]...)
 }
 
+func sortSongs(xs []*Song) {
+	sort.Slice(xs, func(i, j int) bool {
+		return string(*xs[i]) < string(*xs[j])
+	})
+}
+
 func mod(r int, m int) int {
 	t := r % m
 	if t < 0 {
@@ -63,24 +69,17 @@ type Player struct {
 }
 
 func NewPlayer(songs []*Song) *Player {
-	p := &Player{
+	sortSongs(songs)
+	return &Player{
 		Shuffle: false,
 		Repeat:  false,
 		Speaker: NewSpeaker(),
 		Songs:   songs,
 	}
-	p.sort()
-	return p
 }
 
 func (p *Player) ToggleRepeat() {
 	p.Repeat = !p.Repeat
-}
-
-func (p *Player) sort() {
-	sort.Slice(p.Songs, func(i, j int) bool {
-		return string(*p.Songs[i]) < string(*p.Songs[j])
-	})
 }
 
 func (p *Player) ToggleShuffle() {
@@ -89,7 +88,7 @@ func (p *Player) ToggleShuffle() {
 		p.curr = shuffle(p.Songs, p.curr)
 	} else {
 		song := p.Song()
-		p.sort()
+		sortSongs(p.Songs)
 		if song != nil {
 			p.SetCurrent(song)
 		}

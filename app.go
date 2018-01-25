@@ -1,5 +1,7 @@
 package main
 
+import "time"
+import "math/rand"
 import "fmt"
 import "bytes"
 import "os"
@@ -86,6 +88,7 @@ func updateQueue(app *player.Player) {
 */
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	songs, err := player.FindSongs(".")
 	if err != nil {
 		os.Exit(1)
