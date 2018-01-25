@@ -1,2 +1,2 @@
 test:
-	cd elems && go test
+	go test ./...
