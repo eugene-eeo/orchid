@@ -15,12 +15,17 @@ func TestViewboxUpdate(t *testing.T) {
 	err := quick.Check(func(max, height Int100) bool {
 		m := int(max) + 1
 		h := int(height) + 1
-		i := rand.Intn(m)
-		viewbox := elems.NewViewBox(m, h)
-		a, b := viewbox.Update(i)
-		return (b >= i && i >= a && a >= 0 &&
-			b-a <= h &&
-			b <= m)
+		viewbox := elems.NewViewbox(m, h)
+		for j := 0; j < 100; j++ {
+			i := rand.Intn(m)
+			a, b := viewbox.Update(i)
+			if !(b >= i && i >= a && a >= 0 &&
+				b-a <= h &&
+				b <= m) {
+				return false
+			}
+		}
+		return true
 	}, nil)
 	if err != nil {
 		t.Error(err)
@@ -28,7 +33,7 @@ func TestViewboxUpdate(t *testing.T) {
 }
 
 func TestViewBoxLoHi(t *testing.T) {
-	v := elems.NewViewBox(10, 10)
+	v := elems.NewViewbox(10, 10)
 	a, b := v.Update(1)
 	assert.Equal(t, a, v.Lo())
 	assert.Equal(t, b, v.Hi())

@@ -56,7 +56,8 @@ func TestInputInsertMove(t *testing.T) {
 		for i := 0; i < int(z); i++ {
 			input.Insert('k')
 		}
-		return len(input.String()) == int(x+z)
+		return len(input.String()) == int(x+z) &&
+			input.Cursor() == max(int(x-y), 0)+int(z)
 	}, nil)
 	if err != nil {
 		t.Error(err)

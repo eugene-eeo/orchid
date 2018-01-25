@@ -170,16 +170,16 @@ func (f *FinderUI) Loop() {
 		case termbox.KeyArrowUp:
 			if f.cursor > 0 {
 				f.cursor--
+			} else {
+				f.cursor = len(f.results) - 1
 			}
 		case termbox.KeyTab:
+			fallthrough
+		case termbox.KeyArrowDown:
 			if f.cursor < len(f.results)-1 {
 				f.cursor++
 			} else {
 				f.cursor = 0
-			}
-		case termbox.KeyArrowDown:
-			if f.cursor < len(f.results)-1 {
-				f.cursor++
 			}
 		case termbox.KeyEsc:
 			f.cursor = -1
