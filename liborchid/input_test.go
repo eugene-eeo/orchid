@@ -5,7 +5,7 @@ import "math/rand"
 import "reflect"
 import "testing"
 import "testing/quick"
-import "github.com/eugene-eeo/orchid/elems"
+import "github.com/eugene-eeo/orchid/liborchid"
 import "github.com/stretchr/testify/assert"
 
 func max(a, b int) int {
@@ -34,7 +34,7 @@ func (i Int100) Generate(rand *rand.Rand, size int) reflect.Value {
 
 func TestInputInsertDelete2(t *testing.T) {
 	err := quick.Check(func(x Int100, y Int100) bool {
-		input := elems.NewInput()
+		input := liborchid.NewInput()
 		for i := 0; i < int(x); i++ {
 			input.Insert('k')
 		}
@@ -53,7 +53,7 @@ func TestInputInsertMove(t *testing.T) {
 		a := int(x)
 		b := int(y)
 		c := int(z)
-		input := elems.NewInput()
+		input := liborchid.NewInput()
 		for i := 0; i < a; i++ {
 			input.Insert('a')
 		}
@@ -73,7 +73,7 @@ func TestInputInsertMove(t *testing.T) {
 
 func TestInputInsertMoveDelete(t *testing.T) {
 	err := quick.Check(func(a Int100, b Int100, c Int100) bool {
-		input := elems.NewInput()
+		input := liborchid.NewInput()
 		for i := 0; i < int(a); i++ {
 			input.Insert('k')
 		}
@@ -89,7 +89,7 @@ func TestInputInsertMoveDelete(t *testing.T) {
 }
 
 func TestInsertNatural(t *testing.T) {
-	input := elems.NewInput()
+	input := liborchid.NewInput()
 	input.Insert('a')
 	input.Insert('b')
 	input.Insert('c')

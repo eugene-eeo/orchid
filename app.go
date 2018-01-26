@@ -21,11 +21,19 @@ type hub struct {
 	image    image
 }
 
+func (h *hub) Paused() bool {
+	if h.Stream == nil {
+		return true
+	}
+	return h.Stream.Paused()
+}
+
 func newHub(p *liborchid.Player) *hub {
 	return &hub{
 		Player:   p,
 		Stream:   nil,
 		Requests: make(chan request),
+		image:    &defaultImage{},
 	}
 }
 
@@ -69,7 +77,7 @@ func (h *hub) Play() {
 	h.Stream = stream
 	go func() {
 		stream.Play()
-		complete := <-stream.Channel()
+		complete := <-stream.Complete()
 		if complete {
 			h.Requests <- func(c *hub) {
 				c.Player.Next(1, false)
@@ -90,7 +98,7 @@ func (h *hub) Loop() {
 }
 
 func getIndicator(h *hub) rune {
-	if h.Stream.Paused() {
+	if h.Paused() {
 		return 'Ⅱ'
 	}
 	if h.Player.Shuffle {

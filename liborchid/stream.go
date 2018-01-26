@@ -58,6 +58,6 @@ func (s *Stream) Paused() bool {
 	return s.ctrl.Paused
 }
 
-func (s *Stream) Channel() <-chan bool {
+func (s *Stream) Complete() <-chan bool {
 	return s.done
 }
