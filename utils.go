@@ -1,7 +1,6 @@
 package main
 
 import "github.com/mattn/go-runewidth"
-import "github.com/eugene-eeo/orchid/player"
 
 const DefaultImage string = "\u001B[38;5;147m" + `        _
     _ (` + " - " + `) _
@@ -19,18 +18,6 @@ type defaultImage struct{}
 
 func (d *defaultImage) Render() string {
 	return DefaultImage
-}
-
-func play(p *player.Player) (<-chan bool, error) {
-	song := p.Song()
-	if song == nil {
-		return nil, player.NoMoreSongs
-	}
-	done, err := p.Speaker.Play(song)
-	if err != nil {
-		return nil, err
-	}
-	return done, nil
 }
 
 func must(err error) {

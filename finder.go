@@ -2,8 +2,7 @@ package main
 
 import "strings"
 import "sort"
-import "github.com/eugene-eeo/orchid/player"
-import "github.com/eugene-eeo/orchid/elems"
+import "github.com/eugene-eeo/orchid/liborchid"
 import "github.com/nsf/termbox-go"
 
 func min(a, b int) int {
@@ -25,46 +24,25 @@ type item struct {
 	idx int
 }
 
-func match(a, b string) bool {
-	B := []rune(b)
-	n := len(B)
-	j := 0
-	for _, c := range a {
-		found := false
-		for j < n && !found {
-			found = c == B[j]
-			j++
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
-}
-
-func rankMatch(a, b string) float64 {
-	return float64(len(a)) / float64(len(b))
-}
-
 func matchAll(query string, haystack []*item) []*item {
 	matching := []*item{}
 	for _, x := range haystack {
-		if match(query, x.str) {
+		if liborchid.Match(query, x.str) {
 			matching = append(matching, x)
 		}
 	}
 	sort.Slice(matching, func(i, j int) bool {
-		return rankMatch(query, matching[i].str) > rankMatch(query, matching[j].str)
+		return len(matching[i].str) < len(matching[j].str)
 	})
 	return matching
 }
 
 type Finder struct {
 	items []*item
-	songs []*player.Song
+	songs []*liborchid.Song
 }
 
-func finderFromPlayer(p *player.Player) *Finder {
+func finderFromPlayer(p *liborchid.Player) *Finder {
 	items := make([]*item, len(p.Songs))
 	for i, song := range p.Songs {
 		items[i] = &item{
@@ -82,29 +60,29 @@ func (f *Finder) Find(q string) []*item {
 	return matchAll(strings.ToLower(q), f.items)
 }
 
-func (f *Finder) Get(i *item) *player.Song {
+func (f *Finder) Get(i *item) *liborchid.Song {
 	return f.songs[i.idx]
 }
 
 type FinderUI struct {
 	finder   *Finder
 	requests chan func(*FinderUI)
-	choice   chan *player.Song
+	choice   chan *liborchid.Song
 	results  []*item
-	input    *elems.Input
-	viewbox  *elems.Viewbox
+	input    *liborchid.Input
+	viewbox  *liborchid.Viewbox
 	cursor   int
 }
 
-func newFinderUIFromPlayer(p *player.Player) *FinderUI {
+func newFinderUIFromPlayer(p *liborchid.Player) *FinderUI {
 	finder := finderFromPlayer(p)
 	return &FinderUI{
 		finder:   finder,
 		requests: make(chan func(*FinderUI)),
-		choice:   make(chan *player.Song),
+		choice:   make(chan *liborchid.Song),
 		results:  finder.items,
-		input:    elems.NewInput(),
-		viewbox:  elems.NewViewbox(len(finder.items), 7),
+		input:    liborchid.NewInput(),
+		viewbox:  liborchid.NewViewbox(len(finder.items), 7),
 		cursor:   0,
 	}
 }
@@ -150,7 +128,7 @@ func (f *FinderUI) Render() {
 	must(termbox.Sync())
 }
 
-func (f *FinderUI) Choice() *player.Song {
+func (f *FinderUI) Choice() *liborchid.Song {
 	if len(f.results) == 0 || f.cursor < 0 {
 		return nil
 	}
@@ -189,7 +167,7 @@ func (f *FinderUI) Loop() {
 		default:
 			f.input.Feed(ev.Key, ev.Ch, ev.Mod)
 			f.results = f.finder.Find(f.input.String())
-			f.viewbox = elems.NewViewbox(len(f.results), 7)
+			f.viewbox = liborchid.NewViewbox(len(f.results), 7)
 			f.cursor = 0
 		}
 	}
