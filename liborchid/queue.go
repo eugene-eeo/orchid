@@ -1,12 +1,7 @@
-package player
+package liborchid
 
-import "os"
-import "strings"
-import "errors"
 import "math/rand"
 import "sort"
-
-var NoMoreSongs error = errors.New("No more songs")
 
 func shuffle(xs []*Song, i int) int {
 	x := xs[i]
@@ -29,7 +24,7 @@ func remove(i int, xs []*Song) []*Song {
 
 func sortSongs(xs []*Song) {
 	sort.Slice(xs, func(i, j int) bool {
-		return string(*xs[i]) < string(*xs[j])
+		return string(xs[i].Name()) < string(xs[j].Name())
 	})
 }
 
@@ -41,29 +36,9 @@ func mod(r int, m int) int {
 	return t
 }
 
-func FindSongs(dir string) (songs []*Song, err error) {
-	f, err := os.Open(dir)
-	if err != nil {
-		return
-	}
-	files, err := f.Readdirnames(-1)
-	if err != nil {
-		return
-	}
-	songs = []*Song{}
-	for _, name := range files {
-		if strings.HasSuffix(name, ".mp3") {
-			u := Song(name)
-			songs = append(songs, &u)
-		}
-	}
-	return
-}
-
 type Player struct {
 	Shuffle bool
 	Repeat  bool
-	Speaker *Speaker
 	Songs   []*Song
 	curr    int
 }
@@ -73,7 +48,6 @@ func NewPlayer(songs []*Song) *Player {
 	return &Player{
 		Shuffle: false,
 		Repeat:  false,
-		Speaker: NewSpeaker(),
 		Songs:   songs,
 	}
 }

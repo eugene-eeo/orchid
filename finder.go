@@ -2,69 +2,38 @@ package main
 
 import "strings"
 import "sort"
-import "github.com/eugene-eeo/orchid/player"
-import "github.com/eugene-eeo/orchid/elems"
+import "github.com/eugene-eeo/orchid/liborchid"
 import "github.com/nsf/termbox-go"
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
 
 type item struct {
 	str string
 	idx int
 }
 
-func match(a, b string) bool {
-	B := []rune(b)
-	n := len(B)
-	j := 0
-	for _, c := range a {
-		found := false
-		for j < n && !found {
-			found = c == B[j]
-			j++
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
-}
-
-func rankMatch(a, b string) float64 {
-	return float64(len(a)) / float64(len(b))
-}
-
 func matchAll(query string, haystack []*item) []*item {
 	matching := []*item{}
 	for _, x := range haystack {
-		if match(query, x.str) {
+		if liborchid.Match(query, x.str) {
 			matching = append(matching, x)
 		}
 	}
 	sort.Slice(matching, func(i, j int) bool {
-		return rankMatch(query, matching[i].str) > rankMatch(query, matching[j].str)
+		return len(matching[i].str) < len(matching[j].str)
 	})
 	return matching
 }
 
-type Finder struct {
-	items []*item
-	songs []*player.Song
+type FinderUI struct {
+	songs   []*liborchid.Song
+	items   []*item
+	results []*item
+	choice  chan *liborchid.Song
+	input   *liborchid.Input
+	viewbox *liborchid.Viewbox
+	cursor  int
 }
 
-func finderFromPlayer(p *player.Player) *Finder {
+func newFinderUIFromPlayer(p *liborchid.Player) *FinderUI {
 	items := make([]*item, len(p.Songs))
 	for i, song := range p.Songs {
 		items[i] = &item{
@@ -72,41 +41,23 @@ func finderFromPlayer(p *player.Player) *Finder {
 			idx: i,
 		}
 	}
-	return &Finder{
-		items: items,
-		songs: p.Songs,
+	return &FinderUI{
+		songs:   p.Songs,
+		items:   items,
+		results: items,
+		choice:  make(chan *liborchid.Song),
+		input:   liborchid.NewInput(),
+		viewbox: liborchid.NewViewbox(len(items), 7),
+		cursor:  0,
 	}
 }
 
-func (f *Finder) Find(q string) []*item {
+func (f *FinderUI) Find(q string) []*item {
 	return matchAll(strings.ToLower(q), f.items)
 }
 
-func (f *Finder) Get(i *item) *player.Song {
+func (f *FinderUI) Get(i *item) *liborchid.Song {
 	return f.songs[i.idx]
-}
-
-type FinderUI struct {
-	finder   *Finder
-	requests chan func(*FinderUI)
-	choice   chan *player.Song
-	results  []*item
-	input    *elems.Input
-	viewbox  *elems.Viewbox
-	cursor   int
-}
-
-func newFinderUIFromPlayer(p *player.Player) *FinderUI {
-	finder := finderFromPlayer(p)
-	return &FinderUI{
-		finder:   finder,
-		requests: make(chan func(*FinderUI)),
-		choice:   make(chan *player.Song),
-		results:  finder.items,
-		input:    elems.NewInput(),
-		viewbox:  elems.NewViewbox(len(finder.items), 7),
-		cursor:   0,
-	}
 }
 
 // > ________________ 48x1 => 46x1 query
@@ -131,7 +82,7 @@ func (f *FinderUI) RenderQuery() {
 func (f *FinderUI) RenderResults() {
 	j := 0
 	for i := f.viewbox.Lo(); i < f.viewbox.Hi(); i++ {
-		song := f.finder.Get(f.results[i])
+		song := f.Get(f.results[i])
 		color := termbox.ColorDefault
 		if i == f.cursor {
 			color = termbox.AttrReverse
@@ -150,11 +101,11 @@ func (f *FinderUI) Render() {
 	must(termbox.Sync())
 }
 
-func (f *FinderUI) Choice() *player.Song {
+func (f *FinderUI) Choice() *liborchid.Song {
 	if len(f.results) == 0 || f.cursor < 0 {
 		return nil
 	}
-	return f.finder.Get(f.results[f.cursor])
+	return f.Get(f.results[f.cursor])
 }
 
 func (f *FinderUI) Loop() {
@@ -168,17 +119,15 @@ func (f *FinderUI) Loop() {
 		}
 		switch ev.Key {
 		case termbox.KeyArrowUp:
-			if f.cursor > 0 {
-				f.cursor--
-			} else {
+			f.cursor--
+			if f.cursor < 0 {
 				f.cursor = len(f.results) - 1
 			}
 		case termbox.KeyTab:
 			fallthrough
 		case termbox.KeyArrowDown:
-			if f.cursor < len(f.results)-1 {
-				f.cursor++
-			} else {
+			f.cursor++
+			if f.cursor > len(f.results)-1 {
 				f.cursor = 0
 			}
 		case termbox.KeyEsc:
@@ -188,8 +137,8 @@ func (f *FinderUI) Loop() {
 			exit = true
 		default:
 			f.input.Feed(ev.Key, ev.Ch, ev.Mod)
-			f.results = f.finder.Find(f.input.String())
-			f.viewbox = elems.NewViewbox(len(f.results), 7)
+			f.results = f.Find(f.input.String())
+			f.viewbox = liborchid.NewViewbox(len(f.results), 7)
 			f.cursor = 0
 		}
 	}

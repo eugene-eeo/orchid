@@ -1,4 +1,4 @@
-package elems
+package liborchid
 
 func max(a, b int) int {
 	if a < b {

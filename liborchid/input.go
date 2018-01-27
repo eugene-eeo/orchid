@@ -1,4 +1,4 @@
-package elems
+package liborchid
 
 import "github.com/nsf/termbox-go"
 

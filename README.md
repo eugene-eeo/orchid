@@ -34,6 +34,5 @@ are only properly displayed on screen-256 (at least for me). YMMV.
 ## todo
 
 - [x] `go dep`
-- [ ] write tests
-- [ ] source MP3s from multiple directories
-- [ ] extract + display more tags (?)
+- [x] write tests
+- [ ] refactor
