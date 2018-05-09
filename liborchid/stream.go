@@ -25,7 +25,7 @@ func NewStream(stream beep.StreamCloser, format beep.Format) *Stream {
 
 func (s *Stream) finish(completed bool) {
 	s.finishOnce.Do((func() {
-		s.stream.Close()
+		_ = s.stream.Close()
 		s.done <- completed
 	}))
 }
@@ -36,7 +36,7 @@ func (s *Stream) Stop() {
 
 func (s *Stream) Play() {
 	s.playOnce.Do(func() {
-		speaker.Init(s.format.SampleRate, s.format.SampleRate.N(time.Second/10))
+		_ = speaker.Init(s.format.SampleRate, s.format.SampleRate.N(time.Second/10))
 		speaker.Play(beep.Seq(
 			s.ctrl,
 			beep.Callback(func() {
