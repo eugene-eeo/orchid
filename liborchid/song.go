@@ -5,9 +5,9 @@ import "path/filepath"
 import "github.com/faiface/beep/mp3"
 import "github.com/dhowden/tag"
 
-func FindSongs(dir string) (songs []*Song, err error) {
-	songs = []*Song{}
-	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+func FindSongs(dir string) []*Song {
+	songs := []*Song{}
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -16,7 +16,7 @@ func FindSongs(dir string) (songs []*Song, err error) {
 		}
 		return nil
 	})
-	return
+	return songs
 }
 
 type Song struct {
@@ -46,10 +46,14 @@ func (s *Song) Stream() (*Stream, error) {
 	return NewStream(stream, format), nil
 }
 
-func (s *Song) Tags() (tag.Metadata, error) {
+func (s *Song) Image() *tag.Picture {
 	f, err := s.file()
 	if err != nil {
-		return nil, err
+		return nil
 	}
-	return tag.ReadFrom(f)
+	metadata, err := tag.ReadFrom(f)
+	if err != nil {
+		return nil
+	}
+	return metadata.Picture()
 }

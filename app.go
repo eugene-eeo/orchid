@@ -3,7 +3,6 @@ package main
 import "time"
 import "math/rand"
 import "fmt"
-import "os"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
 import "github.com/lucasb-eyer/go-colorful"
@@ -17,8 +16,8 @@ type hub struct {
 	Stream   *liborchid.Stream
 	Song     *liborchid.Song
 	Requests chan request
-	Rendered *liborchid.Song
-	Image    image
+	rendered *liborchid.Song
+	image    image
 }
 
 func (h *hub) Paused() bool {
@@ -39,7 +38,7 @@ func newHub(p *liborchid.Player) *hub {
 		Player:   p,
 		Stream:   nil,
 		Requests: make(chan request),
-		Image:    &defaultImage{},
+		image:    &defaultImage{},
 	}
 	return h
 }
@@ -51,10 +50,10 @@ func (h *hub) Render() {
 		return
 	}
 	drawName(s.Name(), 1, 0xf0)
-	s = h.Player.Song()
+	currentSong := h.Player.Song()
 	name := "<No songs>"
-	if s != nil {
-		name = s.Name()
+	if currentSong != nil {
+		name = currentSong.Name()
 	}
 	color := termbox.ColorDefault
 	if h.Player.Repeat {
@@ -69,16 +68,10 @@ func (h *hub) Render() {
 		drawName(s.Name(), 2+i, 0xf0)
 	}
 	must(termbox.Sync())
-	if h.Rendered != s {
-		h.Image = getImage(s)
-		if h.Image == nil {
-			h.Image = &defaultImage{}
-		}
+	if h.rendered != s {
+		h.image = getImage(s)
 	}
-	termbox.SetCursor(0, 0)
-	termbox.Sync()
-	fmt.Print(h.Image.Render())
-	fmt.Print("\u001B[?25l")
+	drawImage(h.image)
 }
 
 func (h *hub) Play() {
@@ -134,44 +127,56 @@ func drawName(name string, y int, color termbox.Attribute) {
 	})
 }
 
-func getImage(sng *liborchid.Song) image {
-	var img image = &defaultImage{}
+func getImage(song *liborchid.Song) (img image) {
+	img = &defaultImage{}
 	defer func() {
+		// sometimes getting tags raises a panic;
+		// no idea why but this is an okay fix since images
+		// should not crash the application
 		if r := recover(); r != nil {
-			img = &defaultImage{}
 		}
 	}()
-	if sng == nil {
-		return img
+	if song == nil {
+		return
 	}
-	tags, err := sng.Tags()
-	if err != nil {
-		return img
-	}
-	p := tags.Picture()
+	p := song.Image()
 	if p == nil {
-		return img
+		return
 	}
-	bg, _ := colorful.Hex("#000000")
-	rv, err := ansimage.NewScaledFromReader(bytes.NewReader(p.Data), 16, 16, bg, ansimage.ScaleModeResize, ansimage.NoDithering)
-	if err != nil {
-		return img
+	rv, err := ansimage.NewScaledFromReader(
+		bytes.NewReader(p.Data),
+		16, 16,
+		colorful.LinearRgb(0, 0, 0),
+		ansimage.ScaleModeResize,
+		ansimage.NoDithering,
+	)
+	if err == nil {
+		return rv
 	}
-	return rv
+	return
+}
+
+func drawImage(img image) {
+	if img == nil {
+		img = &defaultImage{}
+	}
+	termbox.SetCursor(0, 0)
+	must(termbox.Sync())
+	fmt.Print(img.Render())
+	fmt.Print("\u001B[?25l")
 }
 
 /*
-	<Prev>
-	<Now Playing>
-	<Up Next>
+	/-------\
+	| 16x16 | <Prev>
+	|       | <Now Playing>
+	|       | <Up Next>
+	\-------/
 */
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	songs, err := liborchid.FindSongs(".")
-	if err != nil {
-		os.Exit(1)
-	}
+	songs := liborchid.FindSongs(".")
 
 	must(termbox.Init())
 	termbox.SetOutputMode(termbox.Output256)
