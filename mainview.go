@@ -25,7 +25,7 @@ type playerView struct {
 func newPlayerView() *playerView {
 	return &playerView{
 		rendered: nil,
-		image:    &defaultImage{},
+		image:    DefaultImage,
 	}
 }
 
@@ -51,9 +51,9 @@ func (pv *playerView) drawImage(song *liborchid.Song) {
 	if song != pv.rendered {
 		pv.rendered = song
 		pv.image = getImage(song)
-		if pv.image == nil {
-			pv.image = &defaultImage{}
-		}
+	}
+	if pv.image == nil {
+		pv.image = DefaultImage
 	}
 	termbox.SetCursor(0, 0)
 	must(termbox.Flush())
@@ -65,6 +65,7 @@ func (pv *playerView) Update(player *liborchid.Player, paused bool, shuffle bool
 	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
 	pv.drawOld(player.Peek(-1), 1)
 	pv.drawCurrent(player.Song(), 2, paused, shuffle, repeat)
+	// can be encapsulated into a loop, but meh.
 	pv.drawOld(player.Peek(1), 3)
 	pv.drawOld(player.Peek(2), 4)
 	pv.drawOld(player.Peek(3), 5)
@@ -89,7 +90,6 @@ func getPlayingIndicator(paused bool, shuffle bool) rune {
 }
 
 func getImage(song *liborchid.Song) (img image) {
-	img = &defaultImage{}
 	defer func() {
 		// sometimes getting tags raises a panic;
 		// no idea why but this is an okay fix since images
