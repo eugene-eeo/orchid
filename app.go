@@ -49,7 +49,6 @@ func (h *hub) Render() {
 	if s == nil {
 		return
 	}
-	drawName(s.Name(), 1, 0xf0)
 	currentSong := h.Player.Song()
 	name := "<No songs>"
 	if currentSong != nil {
@@ -59,6 +58,7 @@ func (h *hub) Render() {
 	if h.Player.Repeat {
 		color = termbox.AttrReverse
 	}
+	drawName(s.Name(), 1, 0xf0)
 	drawName(string(getIndicator(h))+" "+name, 2, color)
 	for i := 1; i <= 3; i++ {
 		s := h.Player.Peek(i)
@@ -68,8 +68,8 @@ func (h *hub) Render() {
 		drawName(s.Name(), 2+i, 0xf0)
 	}
 	must(termbox.Sync())
-	if h.rendered != s {
-		h.image = getImage(s)
+	if h.rendered != currentSong {
+		h.image = getImage(currentSong)
 	}
 	drawImage(h.image)
 }
