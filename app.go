@@ -2,29 +2,21 @@ package main
 
 import "time"
 import "math/rand"
-import "fmt"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
-import "github.com/lucasb-eyer/go-colorful"
-import "github.com/eliukblau/pixterm/ansimage"
-import "bytes"
 
 type request func(*hub)
 
 type hub struct {
-	Player   *liborchid.Player
-	Stream   *liborchid.Stream
-	Song     *liborchid.Song
-	Requests chan request
-	rendered *liborchid.Song
-	image    image
+	Player     *liborchid.Player
+	Stream     *liborchid.Stream
+	Song       *liborchid.Song
+	Requests   chan request
+	playerView *playerView
 }
 
 func (h *hub) Paused() bool {
-	if h.Stream == nil {
-		return true
-	}
-	return h.Stream.Paused()
+	return h.Stream == nil || h.Stream.Paused()
 }
 
 func (h *hub) Toggle() {
@@ -35,43 +27,21 @@ func (h *hub) Toggle() {
 
 func newHub(p *liborchid.Player) *hub {
 	h := &hub{
-		Player:   p,
-		Stream:   nil,
-		Requests: make(chan request),
-		image:    &defaultImage{},
+		Player:     p,
+		Stream:     nil,
+		Requests:   make(chan request),
+		playerView: newPlayerView(),
 	}
 	return h
 }
 
 func (h *hub) Render() {
-	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
-	s := h.Player.Peek(-1)
-	if s == nil {
-		return
-	}
-	currentSong := h.Player.Song()
-	name := "<No songs>"
-	if currentSong != nil {
-		name = currentSong.Name()
-	}
-	color := termbox.ColorDefault
-	if h.Player.Repeat {
-		color = termbox.AttrReverse
-	}
-	drawName(s.Name(), 1, 0xf0)
-	drawName(string(getIndicator(h))+" "+name, 2, color)
-	for i := 1; i <= 3; i++ {
-		s := h.Player.Peek(i)
-		if s == nil {
-			break
-		}
-		drawName(s.Name(), 2+i, 0xf0)
-	}
-	must(termbox.Sync())
-	if h.rendered != currentSong {
-		h.image = getImage(currentSong)
-	}
-	drawImage(h.image)
+	h.playerView.Update(
+		h.Player,
+		h.Paused(),
+		h.Player.Shuffle,
+		h.Player.Repeat,
+	)
 }
 
 func (h *hub) Play() {
@@ -110,69 +80,6 @@ func (h *hub) Loop() {
 		}
 	}
 }
-
-func getIndicator(h *hub) rune {
-	if h.Paused() {
-		return 'Ⅱ'
-	}
-	if h.Player.Shuffle {
-		return '⥮'
-	}
-	return '⏵'
-}
-
-func drawName(name string, y int, color termbox.Attribute) {
-	unicodeCells(name, 30, true, func(dx int, r rune) {
-		termbox.SetCell(18+dx, y, r, color, termbox.ColorDefault)
-	})
-}
-
-func getImage(song *liborchid.Song) (img image) {
-	img = &defaultImage{}
-	defer func() {
-		// sometimes getting tags raises a panic;
-		// no idea why but this is an okay fix since images
-		// should not crash the application
-		if r := recover(); r != nil {
-		}
-	}()
-	if song == nil {
-		return
-	}
-	p := song.Image()
-	if p == nil {
-		return
-	}
-	rv, err := ansimage.NewScaledFromReader(
-		bytes.NewReader(p.Data),
-		16, 16,
-		colorful.LinearRgb(0, 0, 0),
-		ansimage.ScaleModeResize,
-		ansimage.NoDithering,
-	)
-	if err == nil {
-		return rv
-	}
-	return
-}
-
-func drawImage(img image) {
-	if img == nil {
-		img = &defaultImage{}
-	}
-	termbox.SetCursor(0, 0)
-	must(termbox.Sync())
-	fmt.Print(img.Render())
-	fmt.Print("\u001B[?25l")
-}
-
-/*
-	/-------\
-	| 16x16 | <Prev>
-	|       | <Now Playing>
-	|       | <Up Next>
-	\-------/
-*/
 
 func main() {
 	rand.Seed(time.Now().UnixNano())

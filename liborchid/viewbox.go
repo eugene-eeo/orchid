@@ -1,12 +1,5 @@
 package liborchid
 
-func max(a, b int) int {
-	if a < b {
-		return b
-	}
-	return a
-}
-
 func min(a, b int) int {
 	if a < b {
 		return a
@@ -36,7 +29,7 @@ func NewViewbox(max, height int) *Viewbox {
 
 // Update updates the bounds so that i fits in [a',b'), taking into account the
 // maximum value and the height. The new bounds are returned.
-func (v *Viewbox) Update(i int) (int, int) {
+func (v *Viewbox) Update(i int) (lo int, hi int) {
 	if v.lo < v.hi {
 		if i < v.lo {
 			v.lo = i

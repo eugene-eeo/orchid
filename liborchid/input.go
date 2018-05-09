@@ -2,6 +2,13 @@ package liborchid
 
 import "github.com/nsf/termbox-go"
 
+func max(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
+}
+
 // Input represents an editable rune buffer with a cursor.
 type Input struct {
 	buf []rune
