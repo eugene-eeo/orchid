@@ -2,11 +2,12 @@ package liborchid
 
 func Match(a, b string) bool {
 	i := 0
-	n := len(b)
+	r := []rune(b)
+	n := len(r)
 outer:
 	for _, c := range a {
 		for i != n {
-			if c == rune(b[i]) {
+			if c == r[i] {
 				continue outer
 			}
 			i++

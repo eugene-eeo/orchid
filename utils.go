@@ -1,14 +1,25 @@
 package main
 
 import "github.com/mattn/go-runewidth"
+import "github.com/gobuffalo/packr"
+import "github.com/eliukblau/pixterm/ansimage"
+import "github.com/lucasb-eyer/go-colorful"
+import "bytes"
 
-const DefaultImage string = "\u001B[38;5;147m" + `        _
-    _ (` + " - " + `) _
-  /` + "` '.\\ /.' `" + `\
-  ` + "``" + `'-.,=,.-'` + "``" + `
-    .'//v\\'.
-   (_/\ " /\_)
-       '-'`
+var DefaultImage string = ""
+
+func init() {
+	var err error
+	image, err := ansimage.NewScaledFromReader(
+		bytes.NewReader(packr.NewBox("./assets").Bytes("default.png")),
+		16, 16,
+		colorful.LinearRgb(0, 0, 0),
+		ansimage.ScaleModeResize,
+		ansimage.NoDithering,
+	)
+	DefaultImage = image.Render()
+	must(err)
+}
 
 type image interface {
 	Render() string

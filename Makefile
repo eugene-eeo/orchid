@@ -1,8 +1,11 @@
 PHONY: build
 
+install:
+	go get -u github.com/gobuffalo/packr/...
+
 test:
 	go test ./...
 
 build: test
-	go build
-	go install .
+	packr build
+	packr install .

@@ -56,7 +56,7 @@ func (pv *playerView) drawImage(song *liborchid.Song) {
 		}
 	}
 	termbox.SetCursor(0, 0)
-	must(termbox.Sync())
+	must(termbox.Flush())
 	fmt.Print(pv.image.Render())
 	fmt.Print("\u001B[?25l")
 }
