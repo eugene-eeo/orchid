@@ -10,8 +10,8 @@ type Stream struct {
 	format     beep.Format
 	ctrl       *beep.Ctrl
 	done       chan bool
-	finishSync sync.Once
-	playSync   sync.Once
+	finishOnce sync.Once
+	playOnce   sync.Once
 }
 
 func NewStream(stream beep.StreamCloser, format beep.Format) *Stream {
@@ -24,7 +24,7 @@ func NewStream(stream beep.StreamCloser, format beep.Format) *Stream {
 }
 
 func (s *Stream) finish(completed bool) {
-	s.finishSync.Do((func() {
+	s.finishOnce.Do((func() {
 		s.stream.Close()
 		s.done <- completed
 	}))
@@ -35,7 +35,7 @@ func (s *Stream) Stop() {
 }
 
 func (s *Stream) Play() {
-	s.playSync.Do(func() {
+	s.playOnce.Do(func() {
 		speaker.Init(s.format.SampleRate, s.format.SampleRate.N(time.Second/10))
 		speaker.Play(beep.Seq(
 			s.ctrl,

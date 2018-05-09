@@ -42,7 +42,10 @@ func (s *Song) Stream() (*Stream, error) {
 	if err != nil {
 		return nil, err
 	}
-	stream, format, _ := mp3.Decode(f)
+	stream, format, err := mp3.Decode(f)
+	if err != nil {
+		return nil, err
+	}
 	return NewStream(stream, format), nil
 }
 

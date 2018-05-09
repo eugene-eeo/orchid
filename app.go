@@ -11,8 +11,8 @@ type hub struct {
 	Player     *liborchid.Player
 	Stream     *liborchid.Stream
 	Song       *liborchid.Song
-	done       chan struct{}
-	Requests   chan request
+	Done       chan struct{}
+	requests   chan request
 	playerView *playerView
 }
 
@@ -30,8 +30,8 @@ func newHub(p *liborchid.Player) *hub {
 	h := &hub{
 		Player:     p,
 		Stream:     nil,
-		Requests:   make(chan request),
-		done:       make(chan struct{}),
+		requests:   make(chan request),
+		Done:       make(chan struct{}),
 		playerView: newPlayerView(),
 	}
 	return h
@@ -56,16 +56,15 @@ func (h *hub) Play() {
 		h.Stream = nil
 		h.Player.Remove()
 		go func() {
-			h.Requests <- func(c *hub) { c.Play() }
+			h.requests <- func(c *hub) { c.Play() }
 		}()
 		return
 	}
 	h.Stream = stream
 	stream.Play()
 	go func() {
-		complete := <-stream.Complete()
-		if complete {
-			h.Requests <- func(c *hub) {
+		if <-stream.Complete() {
+			h.requests <- func(c *hub) {
 				c.Player.Next(1, false)
 				c.Play()
 			}
@@ -79,7 +78,7 @@ func (h *hub) handle(evt termbox.Event) {
 	}
 	switch evt.Ch {
 	case 'q':
-		h.done <- struct{}{}
+		h.Done <- struct{}{}
 	case 'n':
 		h.Player.Next(1, true)
 		h.Play()
@@ -105,14 +104,14 @@ func (h *hub) handle(evt termbox.Event) {
 }
 
 func (h *hub) Loop(events <-chan termbox.Event) {
+	h.Play()
 	for {
+		h.Render()
 		select {
 		case evt := <-events:
 			h.handle(evt)
-			h.Render()
-		case req := <-h.Requests:
+		case req := <-h.requests:
 			req(h)
-			h.Render()
 		}
 	}
 }
@@ -133,9 +132,5 @@ func main() {
 		}
 	}()
 	go h.Loop(events)
-
-	h.Requests <- func(h *hub) {
-		h.Play()
-	}
-	<-h.done
+	<-h.Done
 }
