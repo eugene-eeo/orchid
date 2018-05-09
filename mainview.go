@@ -56,19 +56,19 @@ func (pv *playerView) drawImage(song *liborchid.Song) {
 		}
 	}
 	termbox.SetCursor(0, 0)
-	termbox.Sync()
+	must(termbox.Sync())
 	fmt.Print(pv.image.Render())
 	fmt.Print("\u001B[?25l")
 }
 
 func (pv *playerView) Update(player *liborchid.Player, paused bool, shuffle bool, repeat bool) {
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
 	pv.drawOld(player.Peek(-1), 1)
 	pv.drawCurrent(player.Song(), 2, paused, shuffle, repeat)
 	pv.drawOld(player.Peek(1), 3)
 	pv.drawOld(player.Peek(2), 4)
 	pv.drawOld(player.Peek(3), 5)
-	termbox.Sync()
+	must(termbox.Sync())
 	pv.drawImage(player.Song())
 }
 

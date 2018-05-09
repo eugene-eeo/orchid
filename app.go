@@ -45,7 +45,7 @@ func (h *hub) Render() {
 }
 
 func (h *hub) Play() {
-	h.Song = h.Player.Peek(0)
+	h.Song = h.Player.Song()
 	if h.Song == nil {
 		return
 	}
