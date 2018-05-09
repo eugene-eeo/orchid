@@ -52,10 +52,6 @@ func newFinderUIFromPlayer(p *liborchid.Player) *FinderUI {
 	}
 }
 
-func (f *FinderUI) Find(q string) []*item {
-	return matchAll(strings.ToLower(q), f.items)
-}
-
 func (f *FinderUI) Get(i *item) *liborchid.Song {
 	return f.songs[i.idx]
 }
@@ -137,7 +133,7 @@ func (f *FinderUI) Loop() {
 			exit = true
 		default:
 			f.input.Feed(ev.Key, ev.Ch, ev.Mod)
-			f.results = f.Find(f.input.String())
+			f.results = matchAll(strings.ToLower(f.input.String()), f.items)
 			f.viewbox = liborchid.NewViewbox(len(f.results), 7)
 			f.cursor = 0
 		}

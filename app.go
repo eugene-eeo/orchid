@@ -11,6 +11,7 @@ type hub struct {
 	Player     *liborchid.Player
 	Stream     *liborchid.Stream
 	Song       *liborchid.Song
+	done       chan struct{}
 	Requests   chan request
 	playerView *playerView
 }
@@ -30,6 +31,7 @@ func newHub(p *liborchid.Player) *hub {
 		Player:     p,
 		Stream:     nil,
 		Requests:   make(chan request),
+		done:       make(chan struct{}),
 		playerView: newPlayerView(),
 	}
 	return h
@@ -71,9 +73,43 @@ func (h *hub) Play() {
 	}()
 }
 
-func (h *hub) Loop() {
+func (h *hub) handle(evt termbox.Event) {
+	if evt.Type != termbox.EventKey {
+		return
+	}
+	switch evt.Ch {
+	case 'q':
+		h.done <- struct{}{}
+	case 'n':
+		h.Player.Next(1, true)
+		h.Play()
+	case 'p':
+		h.Player.Next(-1, true)
+		h.Play()
+	case 's':
+		h.Player.ToggleShuffle()
+	case 'r':
+		h.Player.ToggleRepeat()
+	case 'f':
+		f := newFinderUIFromPlayer(h.Player)
+		go f.Loop()
+		song := <-f.choice
+		if song != nil {
+			h.Player.SetCurrent(song)
+			h.Play()
+		}
+	}
+	if evt.Key == termbox.KeySpace {
+		h.Toggle()
+	}
+}
+
+func (h *hub) Loop(events <-chan termbox.Event) {
 	for {
 		select {
+		case evt := <-events:
+			h.handle(evt)
+			h.Render()
 		case req := <-h.Requests:
 			req(h)
 			h.Render()
@@ -89,57 +125,17 @@ func main() {
 	termbox.SetOutputMode(termbox.Output256)
 	defer termbox.Close()
 
-	exit := make(chan struct{})
-
 	h := newHub(liborchid.NewPlayer(songs))
-	go h.Loop()
+	events := make(chan termbox.Event)
+	go func() {
+		for {
+			events <- termbox.PollEvent()
+		}
+	}()
+	go h.Loop(events)
+
 	h.Requests <- func(h *hub) {
 		h.Play()
 	}
-	go (func() {
-		for {
-			evt := termbox.PollEvent()
-			if evt.Type != termbox.EventKey {
-				continue
-			}
-			switch evt.Ch {
-			case 'q':
-				exit <- struct{}{}
-			case 'n':
-				h.Requests <- func(h *hub) {
-					h.Player.Next(1, true)
-					h.Play()
-				}
-			case 'p':
-				h.Requests <- func(h *hub) {
-					h.Player.Next(-1, true)
-					h.Play()
-				}
-			case 's':
-				h.Requests <- func(h *hub) { h.Player.ToggleShuffle() }
-			case 'r':
-				h.Requests <- func(h *hub) { h.Player.ToggleRepeat() }
-			case 'f':
-				hang := make(chan struct{})
-				h.Requests <- func(h *hub) {
-					f := newFinderUIFromPlayer(h.Player)
-					go f.Loop()
-					song := <-f.choice
-					if song != nil {
-						h.Player.SetCurrent(song)
-						go func() { h.Requests <- func(h *hub) { h.Play() } }()
-					}
-					hang <- struct{}{}
-				}
-				<-hang
-			}
-			if evt.Key == termbox.KeySpace {
-				h.Requests <- func(h *hub) {
-					h.Toggle()
-				}
-			}
-		}
-	})()
-
-	<-exit
+	<-h.done
 }
