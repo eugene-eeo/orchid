@@ -9,7 +9,8 @@ do the rest:
     $ cd totally-legit-music
     $ orchid
 
-Ideally ran in a terminal with size 50x10 and with the excellent [Iosevka Term](https://github.com/be5invis/Iosevka)
+Ideally ran in a terminal with size 50x10 (you could run it on something larger,
+but it doesn't respond to larger/smaller sizes) and with the excellent [Iosevka Term](https://github.com/be5invis/Iosevka)
 font, although Envy Code R works as well. Note on OSX: for some reason images
 are only properly displayed on screen-256 (at least for me). YMMV.
 
@@ -35,4 +36,5 @@ are only properly displayed on screen-256 (at least for me). YMMV.
 
 - [x] `go dep`
 - [x] write tests
-- [ ] refactor
+- [x] refactor
+- [ ] write more tests
