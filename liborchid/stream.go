@@ -27,7 +27,6 @@ func (s *Stream) finish(completed bool) {
 	s.finishSync.Do((func() {
 		s.stream.Close()
 		s.done <- completed
-		close(s.done)
 	}))
 }
 

@@ -3,12 +3,12 @@ package main
 import "time"
 import "math/rand"
 import "fmt"
-import "bytes"
 import "os"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
 import "github.com/lucasb-eyer/go-colorful"
 import "github.com/eliukblau/pixterm/ansimage"
+import "bytes"
 
 type request func(*hub)
 
@@ -17,8 +17,8 @@ type hub struct {
 	Stream   *liborchid.Stream
 	Song     *liborchid.Song
 	Requests chan request
-	rendered *liborchid.Song
-	image    image
+	Rendered *liborchid.Song
+	Image    image
 }
 
 func (h *hub) Paused() bool {
@@ -28,35 +28,56 @@ func (h *hub) Paused() bool {
 	return h.Stream.Paused()
 }
 
+func (h *hub) Toggle() {
+	if h.Stream != nil {
+		h.Stream.Toggle()
+	}
+}
+
 func newHub(p *liborchid.Player) *hub {
-	return &hub{
+	h := &hub{
 		Player:   p,
 		Stream:   nil,
 		Requests: make(chan request),
-		image:    &defaultImage{},
+		Image:    &defaultImage{},
 	}
+	return h
 }
 
 func (h *hub) Render() {
 	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
-	color := termbox.ColorDefault
-	if h.Player.Repeat {
-		color = termbox.AttrReverse
+	s := h.Player.Peek(-1)
+	if s == nil {
+		return
 	}
-	s := h.Player.Song()
+	drawName(s.Name(), 1, 0xf0)
+	s = h.Player.Song()
 	name := "<No songs>"
 	if s != nil {
 		name = s.Name()
 	}
-	drawName(string(getIndicator(h))+" "+name, 2, color)
-	updateQueue(h)
-	must(termbox.Sync())
-	if h.rendered != h.Song {
-		h.rendered = h.Song
-		h.image = getImage(h.Song)
+	color := termbox.ColorDefault
+	if h.Player.Repeat {
+		color = termbox.AttrReverse
 	}
-	fmt.Print("\033[0;0H")
-	fmt.Print(h.image.Render())
+	drawName(string(getIndicator(h))+" "+name, 2, color)
+	for i := 1; i <= 3; i++ {
+		s := h.Player.Peek(i)
+		if s == nil {
+			break
+		}
+		drawName(s.Name(), 2+i, 0xf0)
+	}
+	must(termbox.Sync())
+	if h.Rendered != s {
+		h.Image = getImage(s)
+		if h.Image == nil {
+			h.Image = &defaultImage{}
+		}
+	}
+	termbox.SetCursor(0, 0)
+	termbox.Sync()
+	fmt.Print(h.Image.Render())
 	fmt.Print("\u001B[?25l")
 }
 
@@ -75,8 +96,8 @@ func (h *hub) Play() {
 		return
 	}
 	h.Stream = stream
+	stream.Play()
 	go func() {
-		stream.Play()
 		complete := <-stream.Complete()
 		if complete {
 			h.Requests <- func(c *hub) {
@@ -107,50 +128,42 @@ func getIndicator(h *hub) rune {
 	return '⏵'
 }
 
-func getImage(sng *liborchid.Song) image {
-	tags, err := sng.Tags()
-	if err != nil {
-		return &defaultImage{}
-	}
-	p := tags.Picture()
-	if p == nil {
-		return &defaultImage{}
-	}
-	bg, _ := colorful.Hex("#000000")
-	img, err := ansimage.NewScaledFromReader(bytes.NewReader(p.Data), 16, 16, bg, ansimage.ScaleModeResize, ansimage.NoDithering)
-	if err != nil {
-		return &defaultImage{}
-	}
-	return img
-}
-
 func drawName(name string, y int, color termbox.Attribute) {
 	unicodeCells(name, 30, true, func(dx int, r rune) {
 		termbox.SetCell(18+dx, y, r, color, termbox.ColorDefault)
 	})
 }
 
-func updateQueue(h *hub) {
-	for i := 1; i <= 3; i++ {
-		s := h.Player.Peek(i)
-		if s == nil {
-			break
+func getImage(sng *liborchid.Song) image {
+	var img image = &defaultImage{}
+	defer func() {
+		if r := recover(); r != nil {
+			img = &defaultImage{}
 		}
-		drawName(s.Name(), 2+i, 0xf0)
+	}()
+	if sng == nil {
+		return img
 	}
-	s := h.Player.Peek(-1)
-	if s == nil {
-		return
+	tags, err := sng.Tags()
+	if err != nil {
+		return img
 	}
-	drawName(s.Name(), 1, 0xf0)
+	p := tags.Picture()
+	if p == nil {
+		return img
+	}
+	bg, _ := colorful.Hex("#000000")
+	rv, err := ansimage.NewScaledFromReader(bytes.NewReader(p.Data), 16, 16, bg, ansimage.ScaleModeResize, ansimage.NoDithering)
+	if err != nil {
+		return img
+	}
+	return rv
 }
 
 /*
-	+-------+
-	|       | <Prev>
-	| 16x16 | <Now Playing>
-	|       | <Up Next>
-	+-------+
+	<Prev>
+	<Now Playing>
+	<Up Next>
 */
 
 func main() {
@@ -209,7 +222,9 @@ func main() {
 				<-hang
 			}
 			if evt.Key == termbox.KeySpace {
-				h.Requests <- func(h *hub) { h.Stream.Toggle() }
+				h.Requests <- func(h *hub) {
+					h.Toggle()
+				}
 			}
 		}
 	})()

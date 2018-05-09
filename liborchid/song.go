@@ -6,20 +6,16 @@ import "github.com/faiface/beep/mp3"
 import "github.com/dhowden/tag"
 
 func FindSongs(dir string) (songs []*Song, err error) {
-	f, err := os.Open(dir)
-	if err != nil {
-		return
-	}
-	files, err := f.Readdirnames(-1)
-	if err != nil {
-		return
-	}
 	songs = []*Song{}
-	for _, name := range files {
-		if filepath.Ext(name) == ".mp3" {
-			songs = append(songs, NewSong(name))
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
 		}
-	}
+		if !info.IsDir() && filepath.Ext(info.Name()) == ".mp3" {
+			songs = append(songs, NewSong(path))
+		}
+		return nil
+	})
 	return
 }
 
