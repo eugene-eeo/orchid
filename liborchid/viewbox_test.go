@@ -7,7 +7,7 @@ import "github.com/eugene-eeo/orchid/liborchid"
 import "github.com/stretchr/testify/assert"
 
 // update([a,b), i) => [a',b')
-// where b' >= i >= a' >= 0,
+// where b' > i >= a' >= 0,
 //       b' - a' <= Height, and
 //            b' <= Max
 
@@ -19,7 +19,7 @@ func TestViewboxUpdate(t *testing.T) {
 		for j := 0; j < 100; j++ {
 			i := rand.Intn(m)
 			a, b := viewbox.Update(i)
-			if !(b >= i && i >= a && a >= 0 &&
+			if !(b > i && i >= a && a >= 0 &&
 				b-a <= h &&
 				b <= m) {
 				return false
