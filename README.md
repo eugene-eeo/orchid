@@ -16,9 +16,10 @@ are only properly displayed on screen-256 (at least for me). YMMV.
 
 ## screenshots
 
-| <img src='./screenshots/demo1.png'> | <img src='./screenshots/demo2.png'> | <img src='./screenshots/demo3.png'> |
-|-------------------------------------|-------------------------------------|-------------------------------------|
-| <img src='./screenshots/demo4.png'> | <img src='./screenshots/demo5.png'> | <img src='./screenshots/demo6.png'> |
+[<img src='./screenshots/demo1.png' width='20%'>]()
+[<img src='./screenshots/demo2.png' width='20%'>]()
+[<img src='./screenshots/demo3.png' width='20%'>]()
+[<img src='./screenshots/demo4.png' width='20%'>]()
 
 ## controls
 
@@ -29,7 +30,6 @@ are only properly displayed on screen-256 (at least for me). YMMV.
   - `<enter>` confirm selection
   - `<esc>` cancel
 - `s` toggle shuffle mode
-- `i` toggle info mode
 - `n` next track
 - `p` prev track
 - `q` quit
