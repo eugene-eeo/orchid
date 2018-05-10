@@ -1,6 +1,7 @@
 package main
 
 import "time"
+import "fmt"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
 
@@ -28,15 +29,25 @@ func newVolumeUI(stream *liborchid.Stream) *volumeUI {
 func (v *volumeUI) render() {
 	block := "▊"
 	volume := v.stream.Volume()
-	s := ""
+	pctg := (volume.Volume + 2) / 4
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	for i := 0; i < 46; i++ {
-		if float64(i)/46 <= (volume.Volume+5)/10 {
-			s += block
-		} else {
+	s := " "
+
+	for i := 0; i < 40; i++ {
+		if float64(i)/40 > pctg || pctg == 0 {
 			s += " "
+			continue
 		}
+		s += block
 	}
+
+	s += " "
+	pctgString := fmt.Sprintf("%d%%", int(pctg*100))
+	for i := 0; i < 4-len(pctgString); i++ {
+		s += " "
+	}
+	s += pctgString
+
 	unicodeCells(s, 46, false, func(dx int, r rune) {
 		termbox.SetCell(2+dx, 3, r, termbox.ColorDefault, termbox.ColorDefault)
 	})
@@ -57,16 +68,16 @@ func (v *volumeUI) Loop(events <-chan termbox.Event) {
 				v.done = true
 			case termbox.KeyArrowRight:
 				v.timer.Reset(time.Duration(2) * time.Second)
-				vol.Volume += 0.25
+				vol.Volume += 0.05
 				vol.Silent = false
-				if vol.Volume > 5 {
-					vol.Volume = 5
+				if vol.Volume > 2 {
+					vol.Volume = 2
 				}
 			case termbox.KeyArrowLeft:
 				v.timer.Reset(time.Duration(2) * time.Second)
-				vol.Volume -= 0.25
-				if vol.Volume <= -5 {
-					vol.Volume = -5
+				vol.Volume -= 0.05
+				if vol.Volume <= -2 {
+					vol.Volume = -2
 					vol.Silent = true
 				}
 			}
