@@ -10,9 +10,9 @@ type request func(*hub)
 type hub struct {
 	Player     *liborchid.Player
 	Stream     *liborchid.Stream
-	done       chan struct{}
 	requests   chan request
 	playerView *playerView
+	done       bool
 }
 
 func (h *hub) Paused() bool {
@@ -29,8 +29,8 @@ func newHub(p *liborchid.Player) *hub {
 	return &hub{
 		Player:     p,
 		requests:   make(chan request),
-		done:       make(chan struct{}),
 		playerView: newPlayerView(),
+		done:       false,
 	}
 }
 
@@ -78,7 +78,7 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 		if h.Stream != nil {
 			h.Stream.Stop()
 		}
-		go func() { h.done <- struct{}{} }()
+		h.done = true
 	case 'n':
 		h.Player.Next(1, true)
 		h.Play()
@@ -105,16 +105,13 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 
 func (h *hub) Loop(events <-chan termbox.Event) {
 	h.Play()
-loop:
-	for {
+	for !h.done {
 		h.Render()
 		select {
 		case evt := <-events:
 			h.handle(events, evt)
 		case req := <-h.requests:
 			req(h)
-		case <-h.done:
-			break loop
 		}
 	}
 }
