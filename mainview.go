@@ -84,13 +84,10 @@ func getPlayingIndicator(paused bool, shuffle bool) rune {
 
 func getImage(song *liborchid.Song) (img image) {
 	img = DefaultImage
-	defer func() {
-		// sometimes getting tags raises a panic;
-		// no idea why but this is an okay fix since images
-		// should not crash the application
-		if r := recover(); r != nil {
-		}
-	}()
+	// sometimes getting tags raises a panic;
+	// no idea why but this is an okay fix since images
+	// should not crash the application
+	defer recover()
 	if song == nil {
 		return
 	}
