@@ -61,35 +61,33 @@ func (f *FinderUI) Get(i *item) *liborchid.Song {
 
 func (f *FinderUI) RenderQuery() {
 	query := f.input.String()
-	termbox.SetCell(1, 0, '⏵', termbox.ColorBlue, termbox.ColorDefault)
+	termbox.SetCell(1, 0, '⏵', termbox.ColorBlue, ATTR_DEFAULT)
 	m := f.input.Cursor()
 	u := ' '
 	unicodeCells(query, 46, false, func(x int, r rune) {
-		termbox.SetCell(3+x, 0, r, termbox.ColorDefault, termbox.ColorDefault)
+		termbox.SetCell(3+x, 0, r, ATTR_DEFAULT, ATTR_DEFAULT)
 		if x == f.input.Cursor() {
 			u = r
 		}
 	})
-	termbox.SetCell(3+m, 0, u, termbox.AttrReverse, termbox.ColorDefault)
+	termbox.SetCell(3+m, 0, u, termbox.AttrReverse, ATTR_DEFAULT)
 }
 
 func (f *FinderUI) RenderResults() {
 	j := 0
 	for i := f.viewbox.Lo(); i < f.viewbox.Hi(); i++ {
 		song := f.Get(f.results[i])
-		color := termbox.ColorDefault
+		color := ATTR_DEFAULT
 		if i == f.cursor {
 			color = termbox.AttrReverse
 		}
-		unicodeCells(song.Name(), 48, true, func(x int, r rune) {
-			termbox.SetCell(1+x, 1+j, r, color, termbox.ColorDefault)
-		})
+		drawName(song.Name(), 1, j+1, color)
 		j++
 	}
 }
 
 func (f *FinderUI) Render() {
-	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
+	must(termbox.Clear(ATTR_DEFAULT, ATTR_DEFAULT))
 	f.RenderResults()
 	f.RenderQuery()
 	must(termbox.Sync())

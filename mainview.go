@@ -6,6 +6,9 @@ import "github.com/eugene-eeo/orchid/liborchid"
 import "github.com/eliukblau/pixterm/ansimage"
 import "github.com/dhowden/tag"
 
+const ATTR_DIM = termbox.Attribute(0xf0)
+const ATTR_DEFAULT = termbox.ColorDefault
+
 // Layout (50x8)
 // ┌────────┐
 // │        │ Album (Year)
@@ -51,13 +54,20 @@ func (pv *playerView) drawMetaData() {
 	year := defaultString(defaultInt(meta.Year()), "?")
 	artist := defaultString(meta.Artist(), "Unknown artist")
 	track, total := meta.Track()
-	drawName(fmt.Sprintf("%s (%s)", album, year), 18, 1, 0xf0)
-	drawName(artist, 18, 3, 0xf0)
-	drawName(fmt.Sprintf("Track [%d/%d]", track, total), 18, 4, 0xf0)
+
+	drawName(fmt.Sprintf("%s (%s)", album, year), 20, 1, ATTR_DEFAULT)
+	drawName(artist, 20, 3, ATTR_DEFAULT)
+	drawName(fmt.Sprintf("Track [%d/%d]", track, total), 20, 4, ATTR_DEFAULT)
+}
+
+func (pv *playerView) drawOld(song *liborchid.Song, y int) {
+	if song != nil {
+		drawName(song.Name(), 18, y, 0xf0)
+	}
 }
 
 func (pv *playerView) Update(player *liborchid.Player, paused, shuffle, repeat bool) {
-	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
+	must(termbox.Clear(ATTR_DEFAULT, ATTR_DEFAULT))
 	song := player.Song()
 	name := "<No name>"
 	if song != nil {
@@ -72,13 +82,16 @@ func (pv *playerView) Update(player *liborchid.Player, paused, shuffle, repeat b
 	}
 	pv.drawMetaData()
 	pv.drawCurrent(defaultString(name, song.Name()), 2, paused, shuffle, repeat)
+	pv.drawOld(player.Peek(-1), 0)
+	pv.drawOld(player.Peek(1), 5)
+	pv.drawOld(player.Peek(2), 6)
 	must(termbox.Sync())
 	pv.drawImage()
 }
 
 func drawName(name string, x int, y int, color termbox.Attribute) {
-	unicodeCells(name, 30, true, func(dx int, r rune) {
-		termbox.SetCell(x+dx, y, r, color, termbox.ColorDefault)
+	unicodeCells(name, 49-x, true, func(dx int, r rune) {
+		termbox.SetCell(x+dx, y, r, color, ATTR_DEFAULT)
 	})
 }
 
