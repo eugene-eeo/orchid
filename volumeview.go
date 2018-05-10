@@ -68,14 +68,14 @@ func (v *volumeUI) Loop(events <-chan termbox.Event) {
 				v.done = true
 			case termbox.KeyArrowRight:
 				v.timer.Reset(time.Duration(2) * time.Second)
-				vol.Volume += 0.05
+				vol.Volume += 0.125
 				vol.Silent = false
 				if vol.Volume > 2 {
 					vol.Volume = 2
 				}
 			case termbox.KeyArrowLeft:
 				v.timer.Reset(time.Duration(2) * time.Second)
-				vol.Volume -= 0.05
+				vol.Volume -= 0.125
 				if vol.Volume <= -2 {
 					vol.Volume = -2
 					vol.Silent = true
