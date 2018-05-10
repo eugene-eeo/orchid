@@ -51,19 +51,10 @@ func (s *Song) Metadata() tag.Metadata {
 	if err != nil {
 		return nil
 	}
+	defer f.Close()
 	metadata, err := tag.ReadFrom(f)
 	if err != nil {
 		return nil
 	}
 	return metadata
-}
-
-func (s *Song) Title() string {
-	if m := s.Metadata(); m != nil {
-		title := m.Title()
-		if title != "" {
-			return title
-		}
-	}
-	return s.Name()
 }

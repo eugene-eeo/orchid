@@ -35,9 +35,9 @@ func newHub(p *liborchid.Player) *hub {
 	return &hub{
 		Player:   p,
 		requests: make(chan request),
-		view:     newPlayerView(),
+		view:     newInfoView(),
+		isInfo:   true,
 		done:     false,
-		isInfo:   false,
 	}
 }
 
