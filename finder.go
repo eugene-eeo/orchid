@@ -61,7 +61,7 @@ func (f *FinderUI) Get(i *item) *liborchid.Song {
 
 func (f *FinderUI) RenderQuery() {
 	query := f.input.String()
-	termbox.SetCell(1, 0, '>', termbox.ColorRed, termbox.ColorDefault)
+	termbox.SetCell(1, 0, '⏵', termbox.ColorBlue, termbox.ColorDefault)
 	m := f.input.Cursor()
 	u := ' '
 	unicodeCells(query, 46, false, func(x int, r rune) {
