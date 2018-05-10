@@ -55,10 +55,6 @@ func (s *Stream) Play() {
 	})
 }
 
-func (s *Stream) Volume() *effects.Volume {
-	return s.volume
-}
-
 func (s *Stream) Toggle() bool {
 	speaker.Lock()
 	defer speaker.Unlock()
@@ -72,4 +68,19 @@ func (s *Stream) Paused() bool {
 
 func (s *Stream) Complete() <-chan bool {
 	return s.done
+}
+
+func (s *Stream) Volume() float64 {
+	return s.volume.Volume
+}
+
+func (s *Stream) SetVolume(v, min, max float64) {
+	if v > max {
+		v = max
+	}
+	if v < min {
+		v = min
+	}
+	s.volume.Volume = v
+	s.volume.Silent = v <= min
 }

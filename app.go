@@ -5,9 +5,8 @@ import "math/rand"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
 
-type updatable interface {
-	Update(player *liborchid.Player, paused, shuffle, repeat bool)
-}
+const MAX_VOLUME float64 = +0.0
+const MIN_VOLUME float64 = -4.0
 
 type request func(*hub)
 
@@ -15,7 +14,7 @@ type hub struct {
 	Player   *liborchid.Player
 	Stream   *liborchid.Stream
 	requests chan request
-	view     updatable
+	view     *playerView
 	done     bool
 	isInfo   bool
 	volume   float64
@@ -35,8 +34,8 @@ func newHub(p *liborchid.Player) *hub {
 	return &hub{
 		Player:   p,
 		requests: make(chan request),
-		view:     newInfoView(),
-		isInfo:   true,
+		view:     newPlayerView(),
+		isInfo:   false,
 		done:     false,
 	}
 }
@@ -64,11 +63,8 @@ func (h *hub) Play() {
 		}()
 		return
 	}
+	stream.SetVolume(h.volume, MIN_VOLUME, MAX_VOLUME)
 	h.Stream = stream
-	stream.Volume().Volume = h.volume
-	if h.volume == -4 {
-		stream.Volume().Silent = true
-	}
 	stream.Play()
 	go func() {
 		if <-stream.Complete() {
@@ -108,13 +104,6 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 			h.Player.SetCurrent(song)
 			h.Play()
 		}
-	case 'i':
-		h.isInfo = !h.isInfo
-		if h.isInfo {
-			h.view = newInfoView()
-		} else {
-			h.view = newPlayerView()
-		}
 	}
 	switch evt.Key {
 	case termbox.KeySpace:
@@ -124,7 +113,7 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 	case termbox.KeyArrowRight:
 		v := newVolumeUI(h.Stream)
 		v.Loop(events)
-		h.volume = h.Stream.Volume().Volume
+		h.volume = h.Stream.Volume()
 	default:
 	}
 }

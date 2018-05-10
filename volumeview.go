@@ -28,13 +28,16 @@ func newVolumeUI(stream *liborchid.Stream) *volumeUI {
 
 func (v *volumeUI) render() {
 	block := "▊"
-	volume := v.stream.Volume()
-	pctg := (volume.Volume + 4) / 4
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	ratio := (v.stream.Volume() - MIN_VOLUME) / (MAX_VOLUME - MIN_VOLUME)
+	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
+
 	s := " "
+	d := float64(1) / 40
+	f := 0.0
 
 	for i := 0; i < 40; i++ {
-		if float64(i)/40 > pctg || pctg == 0 {
+		f += d
+		if f > ratio || ratio == 0 {
 			s += " "
 			continue
 		}
@@ -42,7 +45,7 @@ func (v *volumeUI) render() {
 	}
 
 	s += " "
-	pctgString := fmt.Sprintf("%d%%", int(pctg*100))
+	pctgString := fmt.Sprintf("%d%%", int(ratio*100))
 	for i := 0; i < 4-len(pctgString); i++ {
 		s += " "
 	}
@@ -51,13 +54,12 @@ func (v *volumeUI) render() {
 	unicodeCells(s, 46, false, func(dx int, r rune) {
 		termbox.SetCell(2+dx, 3, r, termbox.ColorDefault, termbox.ColorDefault)
 	})
-	termbox.Sync()
+	must(termbox.Sync())
 }
 
 func (v *volumeUI) Loop(events <-chan termbox.Event) {
 	for !v.done {
 		v.render()
-		vol := v.stream.Volume()
 		select {
 		case evt := <-events:
 			switch evt.Key {
@@ -66,20 +68,21 @@ func (v *volumeUI) Loop(events <-chan termbox.Event) {
 					<-v.timer.C
 				}
 				v.done = true
-			case termbox.KeyArrowRight:
-				v.timer.Reset(time.Duration(2) * time.Second)
-				vol.Volume += 0.125
-				vol.Silent = false
-				if vol.Volume > 0 {
-					vol.Volume = 0
-				}
+				break
 			case termbox.KeyArrowLeft:
 				v.timer.Reset(time.Duration(2) * time.Second)
-				vol.Volume -= 0.125
-				if vol.Volume <= -4 {
-					vol.Volume = -4
-					vol.Silent = true
-				}
+				v.stream.SetVolume(
+					v.stream.Volume()-0.125,
+					MIN_VOLUME,
+					MAX_VOLUME,
+				)
+			case termbox.KeyArrowRight:
+				v.timer.Reset(time.Duration(2) * time.Second)
+				v.stream.SetVolume(
+					v.stream.Volume()+0.125,
+					MIN_VOLUME,
+					MAX_VOLUME,
+				)
 			}
 		case _ = <-v.timer.C:
 			v.done = true
