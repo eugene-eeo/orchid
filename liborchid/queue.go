@@ -96,8 +96,8 @@ func (p *Player) Remove() {
 }
 
 func (p *Player) SetCurrent(s *Song) {
-	for i := 0; i < len(p.Songs); i++ {
-		if p.Songs[i] == s {
+	for i, song := range p.Songs {
+		if song == s {
 			p.curr = i
 			break
 		}

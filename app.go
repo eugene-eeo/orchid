@@ -10,8 +10,7 @@ type request func(*hub)
 type hub struct {
 	Player     *liborchid.Player
 	Stream     *liborchid.Stream
-	Song       *liborchid.Song
-	Done       chan struct{}
+	done       chan struct{}
 	requests   chan request
 	playerView *playerView
 }
@@ -27,14 +26,12 @@ func (h *hub) Toggle() {
 }
 
 func newHub(p *liborchid.Player) *hub {
-	h := &hub{
+	return &hub{
 		Player:     p,
-		Stream:     nil,
 		requests:   make(chan request),
-		Done:       make(chan struct{}),
+		done:       make(chan struct{}),
 		playerView: newPlayerView(),
 	}
-	return h
 }
 
 func (h *hub) Render() {
@@ -47,11 +44,11 @@ func (h *hub) Render() {
 }
 
 func (h *hub) Play() {
-	h.Song = h.Player.Song()
-	if h.Song == nil {
+	song := h.Player.Song()
+	if song == nil {
 		return
 	}
-	stream, err := h.Song.Stream()
+	stream, err := song.Stream()
 	if err != nil {
 		h.Stream = nil
 		h.Player.Remove()
@@ -72,13 +69,16 @@ func (h *hub) Play() {
 	}()
 }
 
-func (h *hub) handle(evt termbox.Event) {
+func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 	if evt.Type != termbox.EventKey {
 		return
 	}
 	switch evt.Ch {
 	case 'q':
-		h.Done <- struct{}{}
+		if h.Stream != nil {
+			h.Stream.Stop()
+		}
+		h.done <- struct{}{}
 	case 'n':
 		h.Player.Next(1, true)
 		h.Play()
@@ -91,8 +91,8 @@ func (h *hub) handle(evt termbox.Event) {
 		h.Player.ToggleRepeat()
 	case 'f':
 		f := newFinderUIFromPlayer(h.Player)
-		go f.Loop()
-		song := <-f.choice
+		f.Loop(events)
+		song := f.Choice()
 		if song != nil {
 			h.Player.SetCurrent(song)
 			h.Play()
@@ -109,9 +109,11 @@ func (h *hub) Loop(events <-chan termbox.Event) {
 		h.Render()
 		select {
 		case evt := <-events:
-			h.handle(evt)
+			h.handle(events, evt)
 		case req := <-h.requests:
 			req(h)
+		case <-h.done:
+			break
 		}
 	}
 }
@@ -132,5 +134,5 @@ func main() {
 		}
 	}()
 	go h.Loop(events)
-	<-h.Done
+	<-h.done
 }

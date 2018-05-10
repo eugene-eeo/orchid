@@ -27,7 +27,6 @@ type FinderUI struct {
 	songs   []*liborchid.Song
 	items   []*item
 	results []*item
-	choice  chan *liborchid.Song
 	input   *liborchid.Input
 	viewbox *liborchid.Viewbox
 	cursor  int
@@ -45,7 +44,6 @@ func newFinderUIFromPlayer(p *liborchid.Player) *FinderUI {
 		songs:   p.Songs,
 		items:   items,
 		results: items,
-		choice:  make(chan *liborchid.Song),
 		input:   liborchid.NewInput(),
 		viewbox: liborchid.NewViewbox(len(items), 7),
 		cursor:  0,
@@ -104,15 +102,12 @@ func (f *FinderUI) Choice() *liborchid.Song {
 	return f.Get(f.results[f.cursor])
 }
 
-func (f *FinderUI) Loop() {
+func (f *FinderUI) Loop(events <-chan termbox.Event) {
 	exit := false
 	for !exit {
 		f.viewbox.Update(f.cursor)
 		f.Render()
-		ev := termbox.PollEvent()
-		if ev.Type != termbox.EventKey {
-			continue
-		}
+		ev := <-events
 		switch ev.Key {
 		case termbox.KeyArrowUp:
 			f.cursor--
@@ -138,5 +133,4 @@ func (f *FinderUI) Loop() {
 			f.cursor = 0
 		}
 	}
-	f.choice <- f.Choice()
 }
