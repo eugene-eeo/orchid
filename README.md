@@ -9,10 +9,10 @@ do the rest:
     $ cd totally-legit-music
     $ orchid -h
 
-Ideally ran in a terminal with size 50x10 (you could run it on something larger,
+Ideally ran in a terminal with size 50x8 (you could run it on something larger,
 but it doesn't respond to larger/smaller sizes) and with the excellent [Iosevka Term](https://github.com/be5invis/Iosevka)
-font, although Envy Code R works as well. Note on OSX: for some reason images
-are only properly displayed on screen-256 (at least for me). YMMV.
+font. On OSX, the album art is only properly displayed on tmux (at least
+for me). YMMV.
 
 ## screenshots
 

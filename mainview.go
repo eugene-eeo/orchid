@@ -39,7 +39,7 @@ func (pv *playerView) drawCurrent(title string, y int, paused bool, shuffle bool
 }
 
 func (pv *playerView) drawImage() {
-	fmt.Print("\u001B[0;0H" + pv.image + "\u001B[?25l")
+	fmt.Print("\033[0;0H" + pv.image + "\u001B[?25l")
 }
 
 func (pv *playerView) drawMetaData() {
