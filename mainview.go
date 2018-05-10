@@ -4,32 +4,28 @@ import "fmt"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
 import "github.com/eliukblau/pixterm/ansimage"
+import "github.com/dhowden/tag"
 
 // Layout (50x8)
 // ┌────────┐
-// │        │ Previous Song
-// │ 16x16  │ <Play/Pause> Current Song
-// │        │ Next 3 songs
-// │        │ ...
-// │        │ ...
+// │        │ Album (Year)
+// │ 16x16  │ <Play/Pause> Song Title / Name
+// │        │ Artist
+// │        │ Track [i/n]
+// │        │
 // └────────┘
 //
 
 type playerView struct {
-	current *liborchid.Song
-	image   string
+	current  *liborchid.Song
+	image    string
+	metadata tag.Metadata
 }
 
 func newPlayerView() *playerView {
 	return &playerView{
 		current: nil,
 		image:   DefaultImage.Render(),
-	}
-}
-
-func (pv *playerView) drawOld(song *liborchid.Song, y int) {
-	if song != nil {
-		drawName(song.Name(), 18, y, 0xf0)
 	}
 }
 
@@ -42,30 +38,42 @@ func (pv *playerView) drawCurrent(title string, y int, paused bool, shuffle bool
 	drawName(name, 18, y, attr)
 }
 
-func (pv *playerView) drawImage(song *liborchid.Song) {
-	if song != pv.current {
-		pv.current = song
-		pv.image = getImage(song).Render()
+func (pv *playerView) drawImage() {
+	fmt.Print("\u001B[0;0H" + pv.image + "\u001B[?25l")
+}
+
+func (pv *playerView) drawMetaData() {
+	meta := pv.metadata
+	if meta == nil {
+		return
 	}
-	termbox.SetCursor(0, 0)
-	must(termbox.Flush())
-	fmt.Print(pv.image + "\u001B[?25l")
+	album := defaultString(meta.Album(), "Unknown album")
+	year := defaultString(defaultInt(meta.Year()), "?")
+	artist := defaultString(meta.Artist(), "Unknown artist")
+	track, total := meta.Track()
+	drawName(fmt.Sprintf("%s (%s)", album, year), 18, 1, 0xf0)
+	drawName(artist, 18, 3, 0xf0)
+	drawName(fmt.Sprintf("Track [%d/%d]", track, total), 18, 4, 0xf0)
 }
 
 func (pv *playerView) Update(player *liborchid.Player, paused, shuffle, repeat bool) {
 	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
-	name := "<No songs>"
-	if player.Song() != nil {
-		name = player.Song().Name()
+	song := player.Song()
+	name := "<No name>"
+	if song != nil {
+		if song != pv.current {
+			pv.current = song
+			pv.metadata = song.Metadata()
+			pv.image = getImage(pv.metadata).Render()
+		}
 	}
-	pv.drawOld(player.Peek(-1), 1)
-	pv.drawCurrent(name, 2, paused, shuffle, repeat)
-	// can be encapsulated into a loop, but meh.
-	pv.drawOld(player.Peek(1), 3)
-	pv.drawOld(player.Peek(2), 4)
-	pv.drawOld(player.Peek(3), 5)
+	if pv.metadata != nil {
+		name = pv.metadata.Title()
+	}
+	pv.drawMetaData()
+	pv.drawCurrent(defaultString(name, song.Name()), 2, paused, shuffle, repeat)
 	must(termbox.Sync())
-	pv.drawImage(player.Song())
+	pv.drawImage()
 }
 
 func drawName(name string, x int, y int, color termbox.Attribute) {
@@ -84,20 +92,16 @@ func getPlayingIndicator(paused, shuffle bool) string {
 	return "⏵"
 }
 
-func getImage(song *liborchid.Song) (img *ansimage.ANSImage) {
+func getImage(metadata tag.Metadata) (img *ansimage.ANSImage) {
 	img = DefaultImage
 	// sometimes getting tags raises a panic;
 	// no idea why but this is an okay fix since images
 	// should not crash the application
 	defer recover()
-	if song == nil {
+	if metadata == nil {
 		return
 	}
-	m := song.Metadata()
-	if m == nil {
-		return
-	}
-	p := m.Picture()
+	p := metadata.Picture()
 	if p == nil {
 		return
 	}
@@ -105,4 +109,18 @@ func getImage(song *liborchid.Song) (img *ansimage.ANSImage) {
 		return rv
 	}
 	return
+}
+
+func defaultInt(a int) string {
+	if a <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d", a)
+}
+
+func defaultString(a string, b string) string {
+	if a == "" {
+		return b
+	}
+	return a
 }

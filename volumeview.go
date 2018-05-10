@@ -15,15 +15,13 @@ type volumeUI struct {
 	stream *liborchid.Stream
 	bar    *liborchid.ProgressBar
 	timer  *time.Timer
-	done   bool
 }
 
 func newVolumeUI(stream *liborchid.Stream) *volumeUI {
 	return &volumeUI{
 		bar:    liborchid.NewProgressBar(46, '▊'),
-		stream: stream,
 		timer:  time.NewTimer(time.Duration(2) * time.Second),
-		done:   false,
+		stream: stream,
 	}
 }
 
@@ -36,8 +34,21 @@ func (v *volumeUI) render() {
 	must(termbox.Sync())
 }
 
+func (v *volumeUI) resetTimer() {
+	v.timer.Reset(time.Duration(2) * time.Second)
+}
+
+func (v *volumeUI) changeVolume(diff float64) {
+	v.stream.SetVolume(
+		v.stream.Volume()+diff,
+		MIN_VOLUME,
+		MAX_VOLUME,
+	)
+}
+
 func (v *volumeUI) Loop(events <-chan termbox.Event) {
-	for !v.done {
+	done := false
+	for !done {
 		v.render()
 		select {
 		case evt := <-events:
@@ -46,25 +57,17 @@ func (v *volumeUI) Loop(events <-chan termbox.Event) {
 				if !v.timer.Stop() {
 					<-v.timer.C
 				}
-				v.done = true
+				done = true
 				break
 			case termbox.KeyArrowLeft:
-				v.timer.Reset(time.Duration(2) * time.Second)
-				v.stream.SetVolume(
-					v.stream.Volume()-0.125,
-					MIN_VOLUME,
-					MAX_VOLUME,
-				)
+				v.changeVolume(-0.125)
+				v.resetTimer()
 			case termbox.KeyArrowRight:
-				v.timer.Reset(time.Duration(2) * time.Second)
-				v.stream.SetVolume(
-					v.stream.Volume()+0.125,
-					MIN_VOLUME,
-					MAX_VOLUME,
-				)
+				v.changeVolume(+0.125)
+				v.resetTimer()
 			}
 		case _ = <-v.timer.C:
-			v.done = true
+			done = true
 		}
 	}
 }
