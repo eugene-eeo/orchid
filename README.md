@@ -16,9 +16,10 @@ are only properly displayed on screen-256 (at least for me). YMMV.
 
 ## screenshots
 
-[<img src='./screenshots/demo1.png' width='30%'>]()
-[<img src='./screenshots/demo2.png' width='30%'>]()
-[<img src='./screenshots/demo3.png' width='30%'>]()
+[<img src='./screenshots/demo1.png' width='24%'>]()
+[<img src='./screenshots/demo2.png' width='24%'>]()
+[<img src='./screenshots/demo3.png' width='24%'>]()
+[<img src='./screenshots/demo4.png' width='24%'>]()
 
 ## controls
 
