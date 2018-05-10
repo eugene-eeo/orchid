@@ -8,13 +8,10 @@ import "github.com/dhowden/tag"
 func FindSongs(dir string) []*Song {
 	songs := []*Song{}
 	_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return nil
-		}
-		if !info.IsDir() && filepath.Ext(info.Name()) == ".mp3" {
+		if err == nil && !info.IsDir() && filepath.Ext(info.Name()) == ".mp3" {
 			songs = append(songs, NewSong(path))
 		}
-		return nil
+		return err
 	})
 	return songs
 }
@@ -49,7 +46,7 @@ func (s *Song) Stream() (*Stream, error) {
 	return NewStream(stream, format), nil
 }
 
-func (s *Song) Image() *tag.Picture {
+func (s *Song) Metadata() tag.Metadata {
 	f, err := s.file()
 	if err != nil {
 		return nil
@@ -58,5 +55,15 @@ func (s *Song) Image() *tag.Picture {
 	if err != nil {
 		return nil
 	}
-	return metadata.Picture()
+	return metadata
+}
+
+func (s *Song) Title() string {
+	if m := s.Metadata(); m != nil {
+		title := m.Title()
+		if title != "" {
+			return title
+		}
+	}
+	return s.Name()
 }

@@ -15,14 +15,14 @@ import "github.com/eugene-eeo/orchid/liborchid"
 //
 
 type playerView struct {
-	rendered *liborchid.Song
-	image    image
+	current *liborchid.Song
+	image   image
 }
 
 func newPlayerView() *playerView {
 	return &playerView{
-		rendered: nil,
-		image:    DefaultImage,
+		current: nil,
+		image:   DefaultImage,
 	}
 }
 
@@ -45,8 +45,8 @@ func (pv *playerView) drawCurrent(song *liborchid.Song, y int, paused bool, shuf
 }
 
 func (pv *playerView) drawImage(song *liborchid.Song) {
-	if song != pv.rendered {
-		pv.rendered = song
+	if song != pv.current {
+		pv.current = song
 		pv.image = getImage(song)
 	}
 	termbox.SetCursor(0, 0)
@@ -91,7 +91,11 @@ func getImage(song *liborchid.Song) (img image) {
 	if song == nil {
 		return
 	}
-	p := song.Image()
+	m := song.Metadata()
+	if m == nil {
+		return
+	}
+	p := m.Picture()
 	if p == nil {
 		return
 	}
