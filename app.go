@@ -5,6 +5,10 @@ import "math/rand"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
 
+type updatable interface {
+	Update(player *liborchid.Player, paused, shuffle, repeat bool)
+}
+
 type request func(*hub)
 
 type hub struct {

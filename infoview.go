@@ -4,10 +4,6 @@ import "fmt"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
 
-type updatable interface {
-	Update(player *liborchid.Player, paused bool, shuffle bool, repeat bool)
-}
-
 type infoView struct {
 	playerView
 }

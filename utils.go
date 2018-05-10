@@ -6,7 +6,7 @@ import "github.com/eliukblau/pixterm/ansimage"
 import "github.com/lucasb-eyer/go-colorful"
 import "bytes"
 
-var DefaultImage image = nil
+var DefaultImage *ansimage.ANSImage = nil
 
 func init() {
 	img, err := bytesToImage(packr.NewBox("./assets").Bytes("default.png"))
@@ -14,7 +14,7 @@ func init() {
 	DefaultImage = img
 }
 
-func bytesToImage(data []byte) (image, error) {
+func bytesToImage(data []byte) (*ansimage.ANSImage, error) {
 	return ansimage.NewScaledFromReader(
 		bytes.NewReader(data),
 		16, 16,
@@ -22,10 +22,6 @@ func bytesToImage(data []byte) (image, error) {
 		ansimage.ScaleModeResize,
 		ansimage.NoDithering,
 	)
-}
-
-type image interface {
-	Render() string
 }
 
 func must(err error) {

@@ -3,6 +3,7 @@ package main
 import "fmt"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
+import "github.com/eliukblau/pixterm/ansimage"
 
 // Layout (50x8)
 // ┌────────┐
@@ -51,7 +52,7 @@ func (pv *playerView) drawImage(song *liborchid.Song) {
 	fmt.Print(pv.image + "\u001B[?25l")
 }
 
-func (pv *playerView) Update(player *liborchid.Player, paused bool, shuffle bool, repeat bool) {
+func (pv *playerView) Update(player *liborchid.Player, paused, shuffle, repeat bool) {
 	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
 	name := "<No songs>"
 	if player.Song() != nil {
@@ -73,7 +74,7 @@ func drawName(name string, x int, y int, color termbox.Attribute) {
 	})
 }
 
-func getPlayingIndicator(paused bool, shuffle bool) string {
+func getPlayingIndicator(paused, shuffle bool) string {
 	if paused {
 		return "Ⅱ"
 	}
@@ -83,7 +84,7 @@ func getPlayingIndicator(paused bool, shuffle bool) string {
 	return "⏵"
 }
 
-func getImage(song *liborchid.Song) (img image) {
+func getImage(song *liborchid.Song) (img *ansimage.ANSImage) {
 	img = DefaultImage
 	// sometimes getting tags raises a panic;
 	// no idea why but this is an okay fix since images
