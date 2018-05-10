@@ -23,6 +23,7 @@ are only properly displayed on screen-256 (at least for me). YMMV.
 ## controls
 
 - `r` toggle repeat song/playlist
+- `<left>` / `<right>` to adjust volume
 - `<space>` pause/play
 - `f` find mode
   - `<enter>` confirm selection
