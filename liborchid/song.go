@@ -5,15 +5,29 @@ import "path/filepath"
 import "github.com/faiface/beep/mp3"
 import "github.com/dhowden/tag"
 
-func FindSongs(dir string) []*Song {
-	songs := []*Song{}
-	_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err == nil && !info.IsDir() && filepath.Ext(info.Name()) == ".mp3" {
-			songs = append(songs, NewSong(path))
+func FindSongs(dir string, recursive bool) (songs []*Song) {
+	songs = []*Song{}
+	if recursive {
+		_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err == nil && !info.IsDir() && filepath.Ext(info.Name()) == ".mp3" {
+				songs = append(songs, NewSong(path))
+			}
+			return err
+		})
+		return
+	}
+	f, err := os.Open(dir)
+	if err != nil {
+		return
+	}
+	if names, err := f.Readdirnames(-1); err != nil {
+		for _, name := range names {
+			if filepath.Ext(name) == ".mp3" {
+				songs = append(songs, NewSong(filepath.Join(dir, name)))
+			}
 		}
-		return err
-	})
-	return songs
+	}
+	return
 }
 
 type Song struct {

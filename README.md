@@ -7,7 +7,7 @@ do the rest:
 
     $ go get -u github.com/eugene-eeo/orchid
     $ cd totally-legit-music
-    $ orchid
+    $ orchid -h
 
 Ideally ran in a terminal with size 50x10 (you could run it on something larger,
 but it doesn't respond to larger/smaller sizes) and with the excellent [Iosevka Term](https://github.com/be5invis/Iosevka)

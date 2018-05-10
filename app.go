@@ -1,5 +1,6 @@
 package main
 
+import "flag"
 import "time"
 import "math/rand"
 import "github.com/nsf/termbox-go"
@@ -114,7 +115,6 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 		v := newVolumeUI(h.Stream)
 		v.Loop(events)
 		h.volume = h.Stream.Volume()
-	default:
 	}
 }
 
@@ -132,8 +132,11 @@ func (h *hub) Loop(events <-chan termbox.Event) {
 }
 
 func main() {
+	recursive := flag.Bool("r", true, "Whether orchid looks recursively for .mp3 files")
+	flag.Parse()
+
 	rand.Seed(time.Now().UnixNano())
-	songs := liborchid.FindSongs(".")
+	songs := liborchid.FindSongs(".", *recursive)
 
 	must(termbox.Init())
 	termbox.SetOutputMode(termbox.Output256)
