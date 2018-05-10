@@ -78,7 +78,7 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 		if h.Stream != nil {
 			h.Stream.Stop()
 		}
-		h.done <- struct{}{}
+		go func() { h.done <- struct{}{} }()
 	case 'n':
 		h.Player.Next(1, true)
 		h.Play()
@@ -105,6 +105,7 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 
 func (h *hub) Loop(events <-chan termbox.Event) {
 	h.Play()
+loop:
 	for {
 		h.Render()
 		select {
@@ -113,7 +114,7 @@ func (h *hub) Loop(events <-chan termbox.Event) {
 		case req := <-h.requests:
 			req(h)
 		case <-h.done:
-			break
+			break loop
 		}
 	}
 }
@@ -127,12 +128,14 @@ func main() {
 	defer termbox.Close()
 
 	h := newHub(liborchid.NewPlayer(songs))
+	// NOTE: very important that this events stream is passed
+	// around and not just used in h.Loop since it will consume
+	// other keyboard events as well
 	events := make(chan termbox.Event)
 	go func() {
 		for {
 			events <- termbox.PollEvent()
 		}
 	}()
-	go h.Loop(events)
-	<-h.done
+	h.Loop(events)
 }
