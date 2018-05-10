@@ -29,7 +29,7 @@ func newVolumeUI(stream *liborchid.Stream) *volumeUI {
 func (v *volumeUI) render() {
 	block := "▊"
 	volume := v.stream.Volume()
-	pctg := (volume.Volume + 2) / 4
+	pctg := (volume.Volume + 4) / 4
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	s := " "
 
@@ -70,14 +70,14 @@ func (v *volumeUI) Loop(events <-chan termbox.Event) {
 				v.timer.Reset(time.Duration(2) * time.Second)
 				vol.Volume += 0.125
 				vol.Silent = false
-				if vol.Volume > 2 {
-					vol.Volume = 2
+				if vol.Volume > 0 {
+					vol.Volume = 0
 				}
 			case termbox.KeyArrowLeft:
 				v.timer.Reset(time.Duration(2) * time.Second)
 				vol.Volume -= 0.125
-				if vol.Volume <= -2 {
-					vol.Volume = -2
+				if vol.Volume <= -4 {
+					vol.Volume = -4
 					vol.Silent = true
 				}
 			}

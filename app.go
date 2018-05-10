@@ -18,6 +18,7 @@ type hub struct {
 	view     updatable
 	done     bool
 	isInfo   bool
+	volume   float64
 }
 
 func (h *hub) Paused() bool {
@@ -64,6 +65,10 @@ func (h *hub) Play() {
 		return
 	}
 	h.Stream = stream
+	stream.Volume().Volume = h.volume
+	if h.volume == -4 {
+		stream.Volume().Silent = true
+	}
 	stream.Play()
 	go func() {
 		if <-stream.Complete() {
@@ -119,6 +124,7 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 	case termbox.KeyArrowRight:
 		v := newVolumeUI(h.Stream)
 		v.Loop(events)
+		h.volume = h.Stream.Volume().Volume
 	default:
 	}
 }
