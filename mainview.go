@@ -3,9 +3,6 @@ package main
 import "fmt"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
-import "github.com/lucasb-eyer/go-colorful"
-import "github.com/eliukblau/pixterm/ansimage"
-import "bytes"
 
 // Layout (50x8)
 // ┌────────┐
@@ -57,8 +54,7 @@ func (pv *playerView) drawImage(song *liborchid.Song) {
 	}
 	termbox.SetCursor(0, 0)
 	must(termbox.Flush())
-	fmt.Print(pv.image.Render())
-	fmt.Print("\u001B[?25l")
+	fmt.Print(pv.image.Render() + "\u001B[?25l")
 }
 
 func (pv *playerView) Update(player *liborchid.Player, paused bool, shuffle bool, repeat bool) {
@@ -104,14 +100,7 @@ func getImage(song *liborchid.Song) (img image) {
 	if p == nil {
 		return
 	}
-	rv, err := ansimage.NewScaledFromReader(
-		bytes.NewReader(p.Data),
-		16, 16,
-		colorful.LinearRgb(0, 0, 0),
-		ansimage.ScaleModeResize,
-		ansimage.NoDithering,
-	)
-	if err == nil {
+	if rv, err := bytesToImage(p.Data); err == nil {
 		return rv
 	}
 	return

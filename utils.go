@@ -9,15 +9,19 @@ import "bytes"
 var DefaultImage image = nil
 
 func init() {
-	var err error
-	DefaultImage, err = ansimage.NewScaledFromReader(
-		bytes.NewReader(packr.NewBox("./assets").Bytes("default.png")),
+	img, err := bytesToImage(packr.NewBox("./assets").Bytes("default.png"))
+	must(err)
+	DefaultImage = img
+}
+
+func bytesToImage(data []byte) (image, error) {
+	return ansimage.NewScaledFromReader(
+		bytes.NewReader(data),
 		16, 16,
 		colorful.LinearRgb(0, 0, 0),
 		ansimage.ScaleModeResize,
 		ansimage.NoDithering,
 	)
-	must(err)
 }
 
 type image interface {
