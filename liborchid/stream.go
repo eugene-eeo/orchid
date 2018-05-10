@@ -3,11 +3,13 @@ package liborchid
 import "sync"
 import "time"
 import "github.com/faiface/beep"
+import "github.com/faiface/beep/effects"
 import "github.com/faiface/beep/speaker"
 
 type Stream struct {
 	stream     beep.StreamCloser
 	format     beep.Format
+	volume     *effects.Volume
 	ctrl       *beep.Ctrl
 	done       chan bool
 	finishOnce sync.Once
@@ -15,10 +17,17 @@ type Stream struct {
 }
 
 func NewStream(stream beep.StreamCloser, format beep.Format) *Stream {
+	volume := &effects.Volume{
+		Streamer: stream,
+		Volume:   0,
+		Base:     2,
+		Silent:   false,
+	}
 	return &Stream{
 		stream: stream,
 		format: format,
-		ctrl:   &beep.Ctrl{Streamer: stream},
+		volume: volume,
+		ctrl:   &beep.Ctrl{Streamer: volume},
 		done:   make(chan bool),
 	}
 }
@@ -44,6 +53,10 @@ func (s *Stream) Play() {
 			}),
 		))
 	})
+}
+
+func (s *Stream) Volume() *effects.Volume {
+	return s.volume
 }
 
 func (s *Stream) Toggle() bool {

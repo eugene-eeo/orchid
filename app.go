@@ -98,8 +98,14 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 			h.Play()
 		}
 	}
-	if evt.Key == termbox.KeySpace {
+	switch evt.Key {
+	case termbox.KeySpace:
 		h.Toggle()
+	case termbox.KeyArrowLeft:
+		fallthrough
+	case termbox.KeyArrowRight:
+		v := newVolumeUI(h.Stream)
+		v.Loop(events)
 	}
 }
 
