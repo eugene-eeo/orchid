@@ -8,11 +8,12 @@ import "github.com/eugene-eeo/orchid/liborchid"
 type request func(*hub)
 
 type hub struct {
-	Player     *liborchid.Player
-	Stream     *liborchid.Stream
-	requests   chan request
-	playerView *playerView
-	done       bool
+	Player   *liborchid.Player
+	Stream   *liborchid.Stream
+	requests chan request
+	view     updatable
+	done     bool
+	isInfo   bool
 }
 
 func (h *hub) Paused() bool {
@@ -27,15 +28,16 @@ func (h *hub) Toggle() {
 
 func newHub(p *liborchid.Player) *hub {
 	return &hub{
-		Player:     p,
-		requests:   make(chan request),
-		playerView: newPlayerView(),
-		done:       false,
+		Player:   p,
+		requests: make(chan request),
+		view:     newPlayerView(),
+		done:     false,
+		isInfo:   false,
 	}
 }
 
 func (h *hub) Render() {
-	h.playerView.Update(
+	h.view.Update(
 		h.Player,
 		h.Paused(),
 		h.Player.Shuffle,
@@ -97,6 +99,13 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 			h.Player.SetCurrent(song)
 			h.Play()
 		}
+	case 'i':
+		h.isInfo = !h.isInfo
+		if h.isInfo {
+			h.view = newInfoView()
+		} else {
+			h.view = newPlayerView()
+		}
 	}
 	switch evt.Key {
 	case termbox.KeySpace:
@@ -106,6 +115,7 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 	case termbox.KeyArrowRight:
 		v := newVolumeUI(h.Stream)
 		v.Loop(events)
+	default:
 	}
 }
 

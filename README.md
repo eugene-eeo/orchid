@@ -30,6 +30,7 @@ are only properly displayed on screen-256 (at least for me). YMMV.
   - `<enter>` confirm selection
   - `<esc>` cancel
 - `s` toggle shuffle mode
+- `i` toggle info mode
 - `n` next track
 - `p` prev track
 - `q` quit

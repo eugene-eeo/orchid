@@ -16,13 +16,13 @@ import "github.com/eugene-eeo/orchid/liborchid"
 
 type playerView struct {
 	current *liborchid.Song
-	image   image
+	image   string
 }
 
 func newPlayerView() *playerView {
 	return &playerView{
 		current: nil,
-		image:   DefaultImage,
+		image:   DefaultImage.Render(),
 	}
 }
 
@@ -32,11 +32,8 @@ func (pv *playerView) drawOld(song *liborchid.Song, y int) {
 	}
 }
 
-func (pv *playerView) drawCurrent(song *liborchid.Song, y int, paused bool, shuffle bool, repeat bool) {
-	name := "<No Songs>"
-	if song != nil {
-		name = string(getPlayingIndicator(paused, shuffle)) + " " + song.Name()
-	}
+func (pv *playerView) drawCurrent(title string, y int, paused bool, shuffle bool, repeat bool) {
+	name := getPlayingIndicator(paused, shuffle) + " " + title
 	attr := termbox.AttrBold
 	if repeat {
 		attr = termbox.AttrReverse
@@ -47,17 +44,21 @@ func (pv *playerView) drawCurrent(song *liborchid.Song, y int, paused bool, shuf
 func (pv *playerView) drawImage(song *liborchid.Song) {
 	if song != pv.current {
 		pv.current = song
-		pv.image = getImage(song)
+		pv.image = getImage(song).Render()
 	}
 	termbox.SetCursor(0, 0)
 	must(termbox.Flush())
-	fmt.Print(pv.image.Render() + "\u001B[?25l")
+	fmt.Print(pv.image + "\u001B[?25l")
 }
 
 func (pv *playerView) Update(player *liborchid.Player, paused bool, shuffle bool, repeat bool) {
 	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
+	name := "<No songs>"
+	if player.Song() != nil {
+		name = player.Song().Name()
+	}
 	pv.drawOld(player.Peek(-1), 1)
-	pv.drawCurrent(player.Song(), 2, paused, shuffle, repeat)
+	pv.drawCurrent(name, 2, paused, shuffle, repeat)
 	// can be encapsulated into a loop, but meh.
 	pv.drawOld(player.Peek(1), 3)
 	pv.drawOld(player.Peek(2), 4)
@@ -72,14 +73,14 @@ func drawName(name string, x int, y int, color termbox.Attribute) {
 	})
 }
 
-func getPlayingIndicator(paused bool, shuffle bool) rune {
+func getPlayingIndicator(paused bool, shuffle bool) string {
 	if paused {
-		return 'Ⅱ'
+		return "Ⅱ"
 	}
 	if shuffle {
-		return '⥮'
+		return "⥮"
 	}
-	return '⏵'
+	return "⏵"
 }
 
 func getImage(song *liborchid.Song) (img image) {
