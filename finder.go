@@ -6,19 +6,21 @@ import "github.com/eugene-eeo/orchid/liborchid"
 import "github.com/nsf/termbox-go"
 
 type item struct {
-	str string
-	idx int
+	str   string
+	idx   int
+	score int
 }
 
 func matchAll(query string, haystack []*item) []*item {
 	matching := []*item{}
 	for _, x := range haystack {
-		if liborchid.Match(query, x.str) {
+		if ok, score := liborchid.Match(query, x.str); ok {
 			matching = append(matching, x)
+			x.score = score
 		}
 	}
 	sort.Slice(matching, func(i, j int) bool {
-		return len(matching[i].str) < len(matching[j].str)
+		return matching[i].score < matching[j].score
 	})
 	return matching
 }
