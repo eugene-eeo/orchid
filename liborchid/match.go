@@ -1,12 +1,12 @@
 package liborchid
 
-func Match(a, b string) (matched bool, score int) {
+func Match(a, b string) (matched bool, distance int) {
 	i := 0
 	r := []rune(b)
 	n := len(r)
-	// s keeps track of how many gaps are in between consequtive characters
+	// s keeps track of how many gaps are in between consecutive characters
 	// m keeps trach of when to start reducing s
-	s := n
+	s := 0
 	m := false
 outer:
 	for _, c := range a {
@@ -17,7 +17,7 @@ outer:
 			}
 			i++
 			if m {
-				s--
+				s++
 			}
 		}
 		return false, s
