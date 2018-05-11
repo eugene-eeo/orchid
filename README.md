@@ -16,10 +16,10 @@ for me). YMMV.
 
 ## screenshots
 
-[<img src='./screenshots/demo1.png' width='20%'>]()
-[<img src='./screenshots/demo2.png' width='20%'>]()
-[<img src='./screenshots/demo3.png' width='20%'>]()
-[<img src='./screenshots/demo4.png' width='20%'>]()
+[<img src='./screenshots/demo1.png' width='20%'>](./screenshots/demo1.png)
+[<img src='./screenshots/demo2.png' width='20%'>](./screenshots/demo2.png)
+[<img src='./screenshots/demo3.png' width='20%'>](./screenshots/demo3.png)
+[<img src='./screenshots/demo4.png' width='20%'>](./screenshots/demo4.png)
 
 ## controls
 

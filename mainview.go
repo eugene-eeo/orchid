@@ -32,13 +32,19 @@ func newPlayerView() *playerView {
 	}
 }
 
-func (pv *playerView) drawCurrent(title string, y int, paused bool, shuffle bool, repeat bool) {
-	name := getPlayingIndicator(paused, shuffle) + " " + title
+func (pv *playerView) drawCurrent(y int, paused bool, shuffle bool, repeat bool) {
+	name := getPlayingIndicator(paused, shuffle) + " " + getSongTitle(pv.current, pv.metadata)
 	attr := termbox.AttrBold
 	if repeat {
 		attr = termbox.AttrReverse
 	}
 	drawName(name, 18, y, attr)
+}
+
+func (pv *playerView) drawNext(song *liborchid.Song, y int) {
+	if song != nil {
+		drawName(song.Name(), 18, y, ATTR_DIM)
+	}
 }
 
 func (pv *playerView) drawImage() {
@@ -55,15 +61,9 @@ func (pv *playerView) drawMetaData() {
 	artist := defaultString(meta.Artist(), "Unknown artist")
 	track, total := meta.Track()
 
-	drawName(fmt.Sprintf("%s (%s)", album, year), 18, 1, ATTR_DEFAULT)
-	drawName(artist, 18, 3, ATTR_DEFAULT)
-	drawName(fmt.Sprintf("Track [%d/%d]", track, total), 18, 4, ATTR_DEFAULT)
-}
-
-func (pv *playerView) drawOld(song *liborchid.Song, y int) {
-	if song != nil {
-		drawName(song.Name(), 16, y, 0xf0)
-	}
+	drawName(fmt.Sprintf("%s (%s)", album, year), 20, 1, ATTR_DEFAULT)
+	drawName(artist, 20, 3, ATTR_DEFAULT)
+	drawName(fmt.Sprintf("Track [%d/%d]", track, total), 20, 4, ATTR_DEFAULT)
 }
 
 func (pv *playerView) Update(player *liborchid.Player, paused, shuffle, repeat bool) {
@@ -74,11 +74,10 @@ func (pv *playerView) Update(player *liborchid.Player, paused, shuffle, repeat b
 		pv.metadata = song.Metadata()
 		pv.image = getImage(pv.metadata).Render()
 	}
-	pv.drawOld(player.Peek(-1), 1)
 	pv.drawMetaData()
-	pv.drawCurrent(getSongTitle(song, pv.metadata), 2, paused, shuffle, repeat)
-	pv.drawOld(player.Peek(1), 5)
-	pv.drawOld(player.Peek(2), 6)
+	pv.drawCurrent(2, paused, shuffle, repeat)
+	pv.drawNext(player.Peek(1), 5)
+	pv.drawNext(player.Peek(2), 6)
 	must(termbox.Sync())
 	pv.drawImage()
 }
@@ -112,10 +111,6 @@ func getPlayingIndicator(paused, shuffle bool) string {
 
 func getImage(metadata tag.Metadata) (img *ansimage.ANSImage) {
 	img = DefaultImage
-	// sometimes getting tags raises a panic;
-	// no idea why but this is an okay fix since images
-	// should not crash the application
-	defer recover()
 	if metadata == nil {
 		return
 	}

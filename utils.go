@@ -17,7 +17,7 @@ func init() {
 func bytesToImage(data []byte) (*ansimage.ANSImage, error) {
 	return ansimage.NewScaledFromReader(
 		bytes.NewReader(data),
-		16, 14,
+		16, 16,
 		colorful.LinearRgb(0, 0, 0),
 		ansimage.ScaleModeResize,
 		ansimage.NoDithering,
