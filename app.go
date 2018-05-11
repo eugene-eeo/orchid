@@ -146,7 +146,7 @@ func main() {
 	// NOTE: very important that this events stream is passed
 	// around and not just used in h.Loop since it will consume
 	// other keyboard events as well
-	events := make(chan termbox.Event)
+	events := make(chan termbox.Event, 5)
 	go func() {
 		for {
 			events <- termbox.PollEvent()

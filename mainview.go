@@ -10,13 +10,13 @@ const ATTR_DIM = termbox.Attribute(0xf0)
 const ATTR_DEFAULT = termbox.ColorDefault
 
 // Layout (50x8)
-// ┌────────┐
-// │        │ Album (Year)
-// │ 16x16  │ <Play/Pause> Song Title / Name
-// │        │ Artist
-// │        │ Track [i/n]
-// │        │
-// └────────┘
+// ┌────────┐ Prev (-1)
+// │        │    Album (Year)
+// │  14x8  │ <Play/Pause> Song Title / Name
+// │        │    Artist
+// │        │    Track [i/n]
+// │        │  Next (1)
+// └────────┘  Next (2)
 //
 
 type playerView struct {
@@ -55,34 +55,28 @@ func (pv *playerView) drawMetaData() {
 	artist := defaultString(meta.Artist(), "Unknown artist")
 	track, total := meta.Track()
 
-	drawName(fmt.Sprintf("%s (%s)", album, year), 20, 1, ATTR_DEFAULT)
-	drawName(artist, 20, 3, ATTR_DEFAULT)
-	drawName(fmt.Sprintf("Track [%d/%d]", track, total), 20, 4, ATTR_DEFAULT)
+	drawName(fmt.Sprintf("%s (%s)", album, year), 18, 1, ATTR_DEFAULT)
+	drawName(artist, 18, 3, ATTR_DEFAULT)
+	drawName(fmt.Sprintf("Track [%d/%d]", track, total), 18, 4, ATTR_DEFAULT)
 }
 
 func (pv *playerView) drawOld(song *liborchid.Song, y int) {
 	if song != nil {
-		drawName(song.Name(), 18, y, 0xf0)
+		drawName(song.Name(), 16, y, 0xf0)
 	}
 }
 
 func (pv *playerView) Update(player *liborchid.Player, paused, shuffle, repeat bool) {
 	must(termbox.Clear(ATTR_DEFAULT, ATTR_DEFAULT))
 	song := player.Song()
-	name := "<No name>"
-	if song != nil {
-		if song != pv.current {
-			pv.current = song
-			pv.metadata = song.Metadata()
-			pv.image = getImage(pv.metadata).Render()
-		}
+	if song != nil && song != pv.current {
+		pv.current = song
+		pv.metadata = song.Metadata()
+		pv.image = getImage(pv.metadata).Render()
 	}
-	if pv.metadata != nil {
-		name = pv.metadata.Title()
-	}
+	pv.drawOld(player.Peek(-1), 1)
 	pv.drawMetaData()
-	pv.drawCurrent(defaultString(name, song.Name()), 2, paused, shuffle, repeat)
-	pv.drawOld(player.Peek(-1), 0)
+	pv.drawCurrent(getSongTitle(song, pv.metadata), 2, paused, shuffle, repeat)
 	pv.drawOld(player.Peek(1), 5)
 	pv.drawOld(player.Peek(2), 6)
 	must(termbox.Sync())
@@ -93,6 +87,17 @@ func drawName(name string, x int, y int, color termbox.Attribute) {
 	unicodeCells(name, 49-x, true, func(dx int, r rune) {
 		termbox.SetCell(x+dx, y, r, color, ATTR_DEFAULT)
 	})
+}
+
+func getSongTitle(song *liborchid.Song, metadata tag.Metadata) string {
+	if song == nil {
+		return "<No Songs>"
+	}
+	name := song.Name()
+	if metadata != nil {
+		name = defaultString(metadata.Title(), name)
+	}
+	return name
 }
 
 func getPlayingIndicator(paused, shuffle bool) string {
