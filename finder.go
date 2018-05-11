@@ -20,7 +20,7 @@ func matchAll(query string, haystack []*item) []*item {
 		}
 	}
 	sort.Slice(matching, func(i, j int) bool {
-		return matching[i].score < matching[j].score
+		return matching[i].score > matching[j].score
 	})
 	return matching
 }
