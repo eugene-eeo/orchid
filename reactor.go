@@ -1,4 +1,4 @@
-package reactor
+package main
 
 import "sync"
 import "github.com/nsf/termbox-go"

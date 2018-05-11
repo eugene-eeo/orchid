@@ -5,12 +5,11 @@ import "time"
 import "math/rand"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
-import "github.com/eugene-eeo/orchid/reactor"
 
 const MAX_VOLUME float64 = +0.0
 const MIN_VOLUME float64 = -4.0
 
-var REACTOR *reactor.Reactor = nil
+var REACTOR *Reactor = nil
 
 type request func(*hub)
 
@@ -177,7 +176,7 @@ func main() {
 	defer termbox.Close()
 
 	h := newHub(liborchid.NewPlayer(songs))
-	REACTOR = reactor.NewReactor(h)
+	REACTOR = NewReactor(h)
 
 	go REACTOR.Loop()
 	go h.MWLoop()

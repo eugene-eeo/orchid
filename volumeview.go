@@ -36,10 +36,14 @@ func newVolumeUI(stream *liborchid.Stream) *volumeUI {
 
 func (v *volumeUI) render() {
 	ratio := (v.volume - MIN_VOLUME) / (MAX_VOLUME - MIN_VOLUME)
-	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
-	unicodeCells(v.bar.Update(ratio), 46, false, func(dx int, r rune) {
-		termbox.SetCell(2+dx, 3, r, termbox.ColorDefault, termbox.ColorDefault)
-	})
+	must(termbox.Clear(ATTR_DEFAULT, ATTR_DEFAULT))
+	unicodeCells(
+		v.bar.Update(ratio), 46, false,
+		func(dx int, r rune) {
+			termbox.SetCell(
+				2+dx, 3, r,
+				ATTR_DEFAULT, ATTR_DEFAULT)
+		})
 	must(termbox.Sync())
 }
 
