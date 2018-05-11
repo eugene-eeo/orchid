@@ -5,9 +5,12 @@ import "time"
 import "math/rand"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
+import "github.com/eugene-eeo/orchid/reactor"
 
 const MAX_VOLUME float64 = +0.0
 const MIN_VOLUME float64 = -4.0
+
+var REACTOR *reactor.Reactor = nil
 
 type request func(*hub)
 
@@ -19,7 +22,7 @@ type hub struct {
 	requests chan request
 	done     chan struct{}
 	volume   float64
-	focus    bool
+	stream   chan termbox.Event
 }
 
 func (h *hub) Paused() bool {
@@ -40,7 +43,7 @@ func newHub(p *liborchid.Player) *hub {
 		view:     newPlayerView(),
 		requests: make(chan request),
 		done:     make(chan struct{}),
-		focus:    true,
+		stream:   make(chan termbox.Event),
 	}
 }
 
@@ -61,10 +64,7 @@ func (h *hub) Play() {
 	h.MWorker.SongQueue <- song
 }
 
-func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event, done chan struct{}) {
-	if evt.Type != termbox.EventKey {
-		return
-	}
+func (h *hub) handle(evt termbox.Event) {
 	switch evt.Ch {
 	case 'q':
 		go func() { h.done <- struct{}{} }()
@@ -79,21 +79,18 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event, done chan s
 	case 'r':
 		h.Player.ToggleRepeat()
 	case 'f':
-		h.focus = false
+		f := newFinderUIFromPlayer(h.Player)
+		REACTOR.Focus(f)
 		go func() {
-			f := newFinderUIFromPlayer(h.Player)
-			f.Loop(events)
+			f.Loop()
 			h.requests <- func(h *hub) {
-				h.focus = true
 				song := f.Choice()
 				if song != nil {
 					h.Player.SetCurrent(song)
 					h.Play()
 				}
 			}
-			done <- struct{}{}
 		}()
-		return
 	}
 	switch evt.Key {
 	case termbox.KeySpace:
@@ -101,20 +98,18 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event, done chan s
 	case termbox.KeyArrowLeft:
 		fallthrough
 	case termbox.KeyArrowRight:
-		h.focus = false
+		v := newVolumeUI(h.Stream)
+		REACTOR.Focus(v)
 		go func() {
-			v := newVolumeUI(h.Stream)
-			v.Loop(events)
-			h.volume = v.volume
-			if h.Stream != nil {
-				h.Stream.SetVolume(h.volume, MIN_VOLUME, MAX_VOLUME)
+			v.Loop()
+			h.requests <- func(h *hub) {
+				h.volume = v.volume
+				if h.Stream != nil {
+					h.Stream.SetVolume(h.volume, MIN_VOLUME, MAX_VOLUME)
+				}
 			}
-			h.focus = true
-			done <- struct{}{}
 		}()
-		return
 	}
-	done <- struct{}{}
 }
 
 func (h *hub) MWLoop() {
@@ -128,8 +123,9 @@ func (h *hub) MWLoop() {
 		switch res.State {
 		case liborchid.PlaybackStart:
 			res.Stream.SetVolume(h.volume, MIN_VOLUME, MAX_VOLUME)
-			h.Stream = res.Stream
-			break
+			h.requests <- func(h *hub) {
+				h.Stream = res.Stream
+			}
 		case liborchid.PlaybackEnd:
 			h.requests <- func(h *hub) {
 				h.Stream = nil
@@ -146,37 +142,22 @@ func (h *hub) MWLoop() {
 	}
 }
 
-func (h *hub) RequestsLoop() chan struct{} {
-	wait := make(chan struct{})
-	go func() {
-	loop:
-		for {
-			select {
-			case r := <-h.requests:
-				r(h)
-				if h.focus {
-					h.Render()
-				}
-			case <-wait:
-				break loop
-			}
-		}
-	}()
-	return wait
+func (h *hub) Sink() chan termbox.Event {
+	return h.stream
 }
 
-func (h *hub) Loop(events <-chan termbox.Event) {
+func (h *hub) Loop() {
 	h.Play()
-	h.Render()
-	wait := make(chan struct{})
 loop:
 	for {
+		if REACTOR.InFocus(h) {
+			h.Render()
+		}
 		select {
-		case evt := <-events:
-			h.requests <- func(h *hub) {
-				h.handle(events, evt, wait)
-			}
-			<-wait
+		case evt := <-h.stream:
+			h.handle(evt)
+		case r := <-h.requests:
+			r(h)
 		case <-h.done:
 			h.MWorker.Stop <- liborchid.SIGNAL
 			break loop
@@ -196,17 +177,9 @@ func main() {
 	defer termbox.Close()
 
 	h := newHub(liborchid.NewPlayer(songs))
-	// NOTE: very important that this events stream is passed
-	// around and not just used in h.Loop since it will consume
-	// other keyboard events as well
-	events := make(chan termbox.Event)
-	go func() {
-		for {
-			events <- termbox.PollEvent()
-		}
-	}()
-	w := h.RequestsLoop()
+	REACTOR = reactor.NewReactor(h)
+
+	go REACTOR.Loop()
 	go h.MWLoop()
-	h.Loop(events)
-	w <- struct{}{}
+	h.Loop()
 }

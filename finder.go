@@ -32,6 +32,7 @@ type FinderUI struct {
 	input   *liborchid.Input
 	viewbox *liborchid.Viewbox
 	cursor  int
+	stream  chan termbox.Event
 }
 
 func newFinderUIFromPlayer(p *liborchid.Player) *FinderUI {
@@ -48,6 +49,7 @@ func newFinderUIFromPlayer(p *liborchid.Player) *FinderUI {
 		results: items,
 		input:   liborchid.NewInput(),
 		viewbox: liborchid.NewViewbox(len(items), 7),
+		stream:  make(chan termbox.Event),
 		cursor:  0,
 	}
 }
@@ -102,12 +104,16 @@ func (f *FinderUI) Choice() *liborchid.Song {
 	return f.Get(f.results[f.cursor])
 }
 
-func (f *FinderUI) Loop(events <-chan termbox.Event) {
-	exit := false
-	for !exit {
+func (f *FinderUI) Sink() chan termbox.Event {
+	return f.stream
+}
+
+func (f *FinderUI) Loop() {
+loop:
+	for {
 		f.viewbox.Update(f.cursor)
 		f.Render()
-		ev := <-events
+		ev := <-f.stream
 		switch ev.Key {
 		case termbox.KeyArrowUp:
 			f.cursor--
@@ -123,9 +129,9 @@ func (f *FinderUI) Loop(events <-chan termbox.Event) {
 			}
 		case termbox.KeyEsc:
 			f.cursor = -1
-			exit = true
+			break loop
 		case termbox.KeyEnter:
-			exit = true
+			break loop
 		default:
 			f.input.Feed(ev.Key, ev.Ch, ev.Mod)
 			f.results = matchAll(strings.ToLower(f.input.String()), f.items)
@@ -133,4 +139,5 @@ func (f *FinderUI) Loop(events <-chan termbox.Event) {
 			f.cursor = 0
 		}
 	}
+	REACTOR.Focus(nil)
 }
