@@ -14,15 +14,16 @@ type request func(*hub)
 type hub struct {
 	Player   *liborchid.Player
 	Stream   *liborchid.Stream
-	requests chan request
+	MWorker  *liborchid.MWorker
 	view     *playerView
-	done     bool
-	isInfo   bool
+	requests chan request
+	done     chan struct{}
 	volume   float64
+	focus    bool
 }
 
 func (h *hub) Paused() bool {
-	return h.Stream == nil || h.Stream.Paused()
+	return h.Stream != nil && h.Stream.Paused()
 }
 
 func (h *hub) Toggle() {
@@ -32,12 +33,14 @@ func (h *hub) Toggle() {
 }
 
 func newHub(p *liborchid.Player) *hub {
+	mw := liborchid.NewMWorker()
 	return &hub{
 		Player:   p,
-		requests: make(chan request),
+		MWorker:  mw,
 		view:     newPlayerView(),
-		isInfo:   false,
-		done:     false,
+		requests: make(chan request),
+		done:     make(chan struct{}),
+		focus:    true,
 	}
 }
 
@@ -55,38 +58,16 @@ func (h *hub) Play() {
 	if song == nil {
 		return
 	}
-	stream, err := song.Stream()
-	if err != nil {
-		h.Stream = nil
-		h.Player.Remove()
-		go func() {
-			h.requests <- func(c *hub) { c.Play() }
-		}()
-		return
-	}
-	stream.SetVolume(h.volume, MIN_VOLUME, MAX_VOLUME)
-	h.Stream = stream
-	stream.Play()
-	go func() {
-		if <-stream.Complete() {
-			h.requests <- func(c *hub) {
-				c.Player.Next(1, false)
-				c.Play()
-			}
-		}
-	}()
+	h.MWorker.SongQueue <- song
 }
 
-func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
+func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event, done chan struct{}) {
 	if evt.Type != termbox.EventKey {
 		return
 	}
 	switch evt.Ch {
 	case 'q':
-		if h.Stream != nil {
-			h.Stream.Stop()
-		}
-		h.done = true
+		go func() { h.done <- struct{}{} }()
 	case 'n':
 		h.Player.Next(1, true)
 		h.Play()
@@ -98,13 +79,21 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 	case 'r':
 		h.Player.ToggleRepeat()
 	case 'f':
-		f := newFinderUIFromPlayer(h.Player)
-		f.Loop(events)
-		song := f.Choice()
-		if song != nil {
-			h.Player.SetCurrent(song)
-			h.Play()
-		}
+		h.focus = false
+		go func() {
+			f := newFinderUIFromPlayer(h.Player)
+			f.Loop(events)
+			h.requests <- func(h *hub) {
+				h.focus = true
+				song := f.Choice()
+				if song != nil {
+					h.Player.SetCurrent(song)
+					h.Play()
+				}
+			}
+			done <- struct{}{}
+		}()
+		return
 	}
 	switch evt.Key {
 	case termbox.KeySpace:
@@ -112,21 +101,85 @@ func (h *hub) handle(events <-chan termbox.Event, evt termbox.Event) {
 	case termbox.KeyArrowLeft:
 		fallthrough
 	case termbox.KeyArrowRight:
-		v := newVolumeUI(h.Stream)
-		v.Loop(events)
-		h.volume = h.Stream.Volume()
+		h.focus = false
+		go func() {
+			v := newVolumeUI(h.Stream)
+			v.Loop(events)
+			h.volume = v.volume
+			if h.Stream != nil {
+				h.Stream.SetVolume(h.volume, MIN_VOLUME, MAX_VOLUME)
+			}
+			h.focus = true
+			done <- struct{}{}
+		}()
+		return
 	}
+	done <- struct{}{}
+}
+
+func (h *hub) MWLoop() {
+	go h.MWorker.Play()
+	for {
+		res := <-h.MWorker.Results
+		// exit signal
+		if res == nil {
+			break
+		}
+		switch res.State {
+		case liborchid.PlaybackStart:
+			res.Stream.SetVolume(h.volume, MIN_VOLUME, MAX_VOLUME)
+			h.Stream = res.Stream
+			break
+		case liborchid.PlaybackEnd:
+			h.requests <- func(h *hub) {
+				h.Stream = nil
+				if res.Error != nil {
+					// playback error
+					h.Player.Remove()
+				} else {
+					// current song interrupted, jump to next song
+					h.Player.Next(1, false)
+				}
+				h.Play()
+			}
+		}
+	}
+}
+
+func (h *hub) RequestsLoop() chan struct{} {
+	wait := make(chan struct{})
+	go func() {
+	loop:
+		for {
+			select {
+			case r := <-h.requests:
+				r(h)
+				if h.focus {
+					h.Render()
+				}
+			case <-wait:
+				break loop
+			}
+		}
+	}()
+	return wait
 }
 
 func (h *hub) Loop(events <-chan termbox.Event) {
 	h.Play()
-	for !h.done {
-		h.Render()
+	h.Render()
+	wait := make(chan struct{})
+loop:
+	for {
 		select {
 		case evt := <-events:
-			h.handle(events, evt)
-		case req := <-h.requests:
-			req(h)
+			h.requests <- func(h *hub) {
+				h.handle(events, evt, wait)
+			}
+			<-wait
+		case <-h.done:
+			h.MWorker.Stop <- liborchid.SIGNAL
+			break loop
 		}
 	}
 }
@@ -146,11 +199,14 @@ func main() {
 	// NOTE: very important that this events stream is passed
 	// around and not just used in h.Loop since it will consume
 	// other keyboard events as well
-	events := make(chan termbox.Event, 5)
+	events := make(chan termbox.Event)
 	go func() {
 		for {
 			events <- termbox.PollEvent()
 		}
 	}()
+	w := h.RequestsLoop()
+	go h.MWLoop()
 	h.Loop(events)
+	w <- struct{}{}
 }

@@ -12,21 +12,27 @@ import "github.com/eugene-eeo/orchid/liborchid"
 //
 
 type volumeUI struct {
+	volume float64
 	stream *liborchid.Stream
 	bar    *liborchid.ProgressBar
 	timer  *time.Timer
 }
 
 func newVolumeUI(stream *liborchid.Stream) *volumeUI {
+	vol := MAX_VOLUME
+	if stream != nil {
+		vol = stream.Volume()
+	}
 	return &volumeUI{
 		bar:    liborchid.NewProgressBar(46, '▊'),
 		timer:  time.NewTimer(time.Duration(2) * time.Second),
 		stream: stream,
+		volume: vol,
 	}
 }
 
 func (v *volumeUI) render() {
-	ratio := (v.stream.Volume() - MIN_VOLUME) / (MAX_VOLUME - MIN_VOLUME)
+	ratio := (v.volume - MIN_VOLUME) / (MAX_VOLUME - MIN_VOLUME)
 	must(termbox.Clear(termbox.ColorDefault, termbox.ColorDefault))
 	unicodeCells(v.bar.Update(ratio), 46, false, func(dx int, r rune) {
 		termbox.SetCell(2+dx, 3, r, termbox.ColorDefault, termbox.ColorDefault)
@@ -39,16 +45,26 @@ func (v *volumeUI) resetTimer() {
 }
 
 func (v *volumeUI) changeVolume(diff float64) {
-	v.stream.SetVolume(
-		v.stream.Volume()+diff,
-		MIN_VOLUME,
-		MAX_VOLUME,
-	)
+	vol := v.volume + diff
+	if vol > MAX_VOLUME {
+		vol = MAX_VOLUME
+	}
+	if vol < MIN_VOLUME {
+		vol = MIN_VOLUME
+	}
+	v.volume = vol
+	if v.stream != nil {
+		v.stream.SetVolume(
+			vol,
+			MIN_VOLUME,
+			MAX_VOLUME,
+		)
+	}
 }
 
 func (v *volumeUI) Loop(events <-chan termbox.Event) {
-	done := false
-	for !done {
+loop:
+	for {
 		v.render()
 		select {
 		case evt := <-events:
@@ -57,8 +73,7 @@ func (v *volumeUI) Loop(events <-chan termbox.Event) {
 				if !v.timer.Stop() {
 					<-v.timer.C
 				}
-				done = true
-				break
+				break loop
 			case termbox.KeyArrowLeft:
 				v.changeVolume(-0.125)
 				v.resetTimer()
@@ -67,7 +82,7 @@ func (v *volumeUI) Loop(events <-chan termbox.Event) {
 				v.resetTimer()
 			}
 		case _ = <-v.timer.C:
-			done = true
+			break loop
 		}
 	}
 }
