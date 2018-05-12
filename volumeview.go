@@ -28,9 +28,9 @@ func newVolumeUI(stream *liborchid.Stream) *volumeUI {
 	return &volumeUI{
 		bar:    liborchid.NewProgressBar(46, '▊'),
 		timer:  time.NewTimer(time.Duration(2) * time.Second),
+		events: make(chan termbox.Event),
 		stream: stream,
 		volume: vol,
-		events: make(chan termbox.Event),
 	}
 }
 

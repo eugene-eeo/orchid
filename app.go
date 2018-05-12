@@ -7,7 +7,7 @@ import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
 
 const MAX_VOLUME float64 = +0.0
-const MIN_VOLUME float64 = -4.0
+const MIN_VOLUME float64 = -8.0
 
 var REACTOR *Reactor = nil
 
@@ -35,10 +35,9 @@ func (h *hub) Toggle() {
 }
 
 func newHub(p *liborchid.Player) *hub {
-	mw := liborchid.NewMWorker()
 	return &hub{
 		Player:   p,
-		MWorker:  mw,
+		MWorker:  liborchid.NewMWorker(),
 		view:     newPlayerView(),
 		requests: make(chan request),
 		done:     make(chan struct{}),

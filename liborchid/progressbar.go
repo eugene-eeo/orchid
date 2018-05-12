@@ -24,7 +24,7 @@ func (pg *ProgressBar) Update(f float64) string {
 
 	for i := 0; i < available; i++ {
 		r := ' '
-		if total < f {
+		if total <= f {
 			r = pg.symbol
 		}
 		blocks += string(r)
