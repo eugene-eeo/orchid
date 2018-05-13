@@ -157,7 +157,7 @@ loop:
 		case r := <-h.requests:
 			r(h)
 		case <-h.done:
-			h.MWorker.Stop <- liborchid.SIGNAL
+			h.MWorker.Stop()
 			break loop
 		}
 	}

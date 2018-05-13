@@ -1,7 +1,5 @@
 package liborchid
 
-var SIGNAL struct{} = struct{}{}
-
 const (
 	PlaybackStart = iota
 	PlaybackEnd
@@ -18,14 +16,14 @@ type PlaybackResult struct {
 type MWorker struct {
 	Results   chan *PlaybackResult
 	SongQueue chan *Song
-	Stop      chan struct{}
+	stop      chan struct{}
 }
 
 func NewMWorker() *MWorker {
 	return &MWorker{
 		Results:   make(chan *PlaybackResult),
 		SongQueue: make(chan *Song),
-		Stop:      make(chan struct{}),
+		stop:      make(chan struct{}),
 	}
 }
 
@@ -37,6 +35,10 @@ func (mw *MWorker) report(state int, song *Song, stream *Stream, complete bool, 
 		Complete: complete,
 		Error:    err,
 	}
+}
+
+func (mw *MWorker) Stop() {
+	mw.stop <- struct{}{}
 }
 
 func (mw *MWorker) Play() {
@@ -60,7 +62,7 @@ loop:
 					nil,
 				)
 			}()
-		case <-mw.Stop:
+		case <-mw.stop:
 			mw.Results <- nil
 			close(mw.Results)
 			break loop
