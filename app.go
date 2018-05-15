@@ -164,7 +164,7 @@ loop:
 }
 
 func main() {
-	recursive := flag.Bool("r", true, "Whether orchid looks recursively for .mp3 files")
+	recursive := flag.Bool("r", true, "look recursively for .mp3 files")
 	flag.Parse()
 
 	rand.Seed(time.Now().UnixNano())
