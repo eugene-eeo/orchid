@@ -28,13 +28,15 @@ func NewMWorker() *MWorker {
 }
 
 func (mw *MWorker) report(state int, song *Song, stream *Stream, complete bool, err error) {
-	mw.Results <- &PlaybackResult{
-		State:    state,
-		Song:     song,
-		Stream:   stream,
-		Complete: complete,
-		Error:    err,
-	}
+	go func() {
+		mw.Results <- &PlaybackResult{
+			State:    state,
+			Song:     song,
+			Stream:   stream,
+			Complete: complete,
+			Error:    err,
+		}
+	}()
 }
 
 func (mw *MWorker) Stop() {
