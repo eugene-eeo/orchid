@@ -44,12 +44,8 @@ func (s *Song) Name() string {
 	return u[:len(u)-len(ext)]
 }
 
-func (s *Song) file() (*os.File, error) {
-	return os.Open(s.path)
-}
-
 func (s *Song) Stream() (*Stream, error) {
-	f, err := s.file()
+	f, err := os.Open(s.path)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +57,7 @@ func (s *Song) Stream() (*Stream, error) {
 }
 
 func (s *Song) Metadata() tag.Metadata {
-	f, err := s.file()
+	f, err := os.Open(s.path)
 	if err != nil {
 		return nil
 	}
