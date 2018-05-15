@@ -1,8 +1,10 @@
 package liborchid
 
 // Match takes two strings a, b and returns whether they
-// match (fuzzy matching) and the distance between
-// a and b. If match is false then the distance returned
+// match (fuzzy matching; if a matches b then all characters
+// in a can be found in b in the same relative order as they
+// appear in a) and the distance between a and b. If match is
+// false then the distance returned
 // should not be trusted.
 func Match(a, b string) (matched bool, distance int) {
 	i := 0
