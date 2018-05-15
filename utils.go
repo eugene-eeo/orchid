@@ -1,9 +1,11 @@
 package main
 
+import "fmt"
 import "github.com/mattn/go-runewidth"
 import "github.com/gobuffalo/packr"
 import "github.com/eliukblau/pixterm/ansimage"
 import "github.com/lucasb-eyer/go-colorful"
+import "github.com/dhowden/tag"
 import "bytes"
 
 var DefaultImage *ansimage.ANSImage = nil
@@ -48,4 +50,33 @@ func unicodeCells(s string, width int, fill bool, f func(int, rune)) {
 		f(x, r)
 		x += runewidth.RuneWidth(r)
 	}
+}
+
+func getImage(metadata tag.Metadata) (img *ansimage.ANSImage) {
+	img = DefaultImage
+	if metadata == nil {
+		return
+	}
+	p := metadata.Picture()
+	if p == nil {
+		return
+	}
+	if rv, err := bytesToImage(p.Data); err == nil {
+		return rv
+	}
+	return
+}
+
+func defaultInt(a int) string {
+	if a <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d", a)
+}
+
+func defaultString(a string, b string) string {
+	if a == "" {
+		return b
+	}
+	return a
 }

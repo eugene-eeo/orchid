@@ -54,13 +54,7 @@ loop:
 			stream.Play()
 			mw.report(PlaybackStart, song, stream, false, nil)
 			go func() {
-				mw.report(
-					PlaybackEnd,
-					song,
-					stream,
-					<-stream.Complete(),
-					nil,
-				)
+				mw.report(PlaybackEnd, song, stream, <-stream.Complete(), nil)
 			}()
 		case <-mw.stop:
 			mw.Results <- nil

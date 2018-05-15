@@ -3,7 +3,6 @@ package main
 import "fmt"
 import "github.com/nsf/termbox-go"
 import "github.com/eugene-eeo/orchid/liborchid"
-import "github.com/eliukblau/pixterm/ansimage"
 import "github.com/dhowden/tag"
 
 const ATTR_DIM = termbox.Attribute(0xf0)
@@ -107,33 +106,4 @@ func getPlayingIndicator(paused, shuffle bool) string {
 		return "⥮"
 	}
 	return "⏵"
-}
-
-func getImage(metadata tag.Metadata) (img *ansimage.ANSImage) {
-	img = DefaultImage
-	if metadata == nil {
-		return
-	}
-	p := metadata.Picture()
-	if p == nil {
-		return
-	}
-	if rv, err := bytesToImage(p.Data); err == nil {
-		return rv
-	}
-	return
-}
-
-func defaultInt(a int) string {
-	if a <= 0 {
-		return ""
-	}
-	return fmt.Sprintf("%d", a)
-}
-
-func defaultString(a string, b string) string {
-	if a == "" {
-		return b
-	}
-	return a
 }
