@@ -77,7 +77,7 @@
   branch = "master"
   name = "github.com/lucasb-eyer/go-colorful"
   packages = ["."]
-  revision = "231272389856c976b7500c4fffcc52ddf06ff4eb"
+  revision = "fa0f842f26263fb2ace6d6118309c8481e029fc1"
 
 [[projects]]
   name = "github.com/mattn/go-runewidth"

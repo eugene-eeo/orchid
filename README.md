@@ -1,9 +1,9 @@
 # orchid
 
-Very tiny music player for my needs. Mostly an excuse for me to learn how
-to use termbox after being inspired by Brandon Rhode's [talk on terminal animations](https://www.youtube.com/watch?v=rrMnmLyYjU8).
-Start it up in a directory where there are MP3 files, and `orchid` will
-do the rest:
+Very tiny MP3 player for _my_ needs. Mostly an excuse for me to learn how
+to use termbox (after being inspired by Brandon Rhode's [talk on terminal animations](https://youtu.be/rrMnmLyYjU8)),
+as well as how to write my own UI loop. Start it up in a directory where
+there are MP3 files, and `orchid` will do the rest:
 
     $ git clone https://github.com/eugene-eeo/orchid
     $ cd orchid
@@ -11,10 +11,10 @@ do the rest:
     $ cd totally-legit-music
     $ orchid -h
 
-Ideally ran in a terminal with size 50x8 (you could run it on something larger,
-but it doesn't respond to larger/smaller sizes) and with the excellent [Iosevka Term](https://github.com/be5invis/Iosevka)
-font. On OSX, the album art is only properly displayed on tmux (at least
-for me). YMMV.
+Ideally ran in a terminal with size 50x8; you could run it on something
+larger, but it doesn't respond to larger/smaller sizes. On OSX, the album
+art is only properly displayed on tmux, (at least for me) for whatever
+reason. YMMV.
 
 ## screenshots
 
@@ -23,7 +23,10 @@ for me). YMMV.
 [<img src='./screenshots/demo3.png' width='20%'>](./screenshots/demo3.png)
 [<img src='./screenshots/demo4.png' width='20%'>](./screenshots/demo4.png)
 
-Screenshots are taken in iTerm with margin and title-less windows.
+Screenshots are taken in iTerm with vertical and horizontal margin 15 and
+title-less windows. Font used is 14px [Iosevka Term](https://github.com/be5invis/Iosevka) with the
+[Twilight](https://github.com/mbadolato/iTerm2-Color-Schemes/blob/master/schemes/Twilight.itermcolors)
+colour profile.
 
 ## controls
 
