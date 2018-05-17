@@ -30,6 +30,7 @@
   name = "github.com/faiface/beep"
   packages = [
     ".",
+    "effects",
     "mp3",
     "speaker"
   ]
@@ -125,6 +126,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bb615b3094c8b8f4ab7ea911997d1d033db325ac8567afb4eb505935a723e298"
+  inputs-digest = "8f112dcb91baf84d5007652dfab6aaa25d9bbe468a5ca560283dfe9140b55bf3"
   solver-name = "gps-cdcl"
   solver-version = 1

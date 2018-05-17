@@ -22,10 +22,11 @@ func remove(i int, xs []*Song) []*Song {
 	return append(xs[:i], xs[i+1:]...)
 }
 
-func sortSongs(xs []*Song) {
+func sortSongs(xs []*Song) []*Song {
 	sort.Slice(xs, func(i, j int) bool {
 		return string(xs[i].Name()) < string(xs[j].Name())
 	})
+	return xs
 }
 
 func mod(r int, m int) int {
@@ -36,27 +37,26 @@ func mod(r int, m int) int {
 	return t
 }
 
-type Player struct {
+type Queue struct {
 	Shuffle bool
 	Repeat  bool
 	Songs   []*Song
 	curr    int
 }
 
-func NewPlayer(songs []*Song) *Player {
-	sortSongs(songs)
-	return &Player{
+func NewQueue(songs []*Song) *Queue {
+	return &Queue{
+		Songs:   sortSongs(songs),
 		Shuffle: false,
 		Repeat:  false,
-		Songs:   songs,
 	}
 }
 
-func (p *Player) ToggleRepeat() {
+func (p *Queue) ToggleRepeat() {
 	p.Repeat = !p.Repeat
 }
 
-func (p *Player) ToggleShuffle() {
+func (p *Queue) ToggleShuffle() {
 	p.Shuffle = !p.Shuffle
 	if p.Shuffle {
 		p.curr = shuffle(p.Songs, p.curr)
@@ -69,11 +69,11 @@ func (p *Player) ToggleShuffle() {
 	}
 }
 
-func (p *Player) Song() *Song {
+func (p *Queue) Song() *Song {
 	return p.Peek(0)
 }
 
-func (p *Player) Peek(i int) *Song {
+func (p *Queue) Peek(i int) *Song {
 	if len(p.Songs) == 0 {
 		return nil
 	}
@@ -81,7 +81,7 @@ func (p *Player) Peek(i int) *Song {
 	return p.Songs[j]
 }
 
-func (p *Player) Next(i int, force bool) *Song {
+func (p *Queue) Next(i int, force bool) *Song {
 	if len(p.Songs) == 0 {
 		return nil
 	}
@@ -91,11 +91,20 @@ func (p *Player) Next(i int, force bool) *Song {
 	return p.Song()
 }
 
-func (p *Player) Remove() {
-	p.Songs = remove(p.curr, p.Songs)
+func (p *Queue) Remove(s *Song) {
+	j := -1
+	for i, song := range p.Songs {
+		if song == s {
+			j = i
+			break
+		}
+	}
+	if j != -1 {
+		p.Songs = remove(p.curr, p.Songs)
+	}
 }
 
-func (p *Player) SetCurrent(s *Song) {
+func (p *Queue) SetCurrent(s *Song) {
 	for i, song := range p.Songs {
 		if song == s {
 			p.curr = i

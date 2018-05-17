@@ -18,17 +18,15 @@ func (pg *ProgressBar) Update(f float64) string {
 	percentage := fmt.Sprintf("%d%%", int(f*100))
 	available := pg.maxWidth - 5
 
-	diff := 1 / float64(available)
+	total := int(f * float64(available))
 	blocks := ""
-	total := diff
 
-	for i := 0; i < available; i++ {
+	for i := 1; i <= available; i++ {
 		r := ' '
-		if total <= f {
+		if i <= total {
 			r = pg.symbol
 		}
 		blocks += string(r)
-		total += diff
 	}
 
 	n := pg.maxWidth - available - len(percentage)

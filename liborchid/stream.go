@@ -7,16 +7,15 @@ import "github.com/faiface/beep/effects"
 import "github.com/faiface/beep/speaker"
 
 type Stream struct {
-	stream     beep.StreamCloser
+	stream     beep.StreamSeekCloser
 	format     beep.Format
 	volume     *effects.Volume
 	ctrl       *beep.Ctrl
 	done       chan bool
 	finishOnce sync.Once
-	playOnce   sync.Once
 }
 
-func NewStream(stream beep.StreamCloser, format beep.Format) *Stream {
+func NewStream(stream beep.StreamSeekCloser, format beep.Format) *Stream {
 	volume := &effects.Volume{
 		Streamer: stream,
 		Volume:   0,
@@ -44,15 +43,13 @@ func (s *Stream) Stop() {
 }
 
 func (s *Stream) Play() {
-	s.playOnce.Do(func() {
-		_ = speaker.Init(s.format.SampleRate, s.format.SampleRate.N(time.Second/10))
-		speaker.Play(beep.Seq(
-			s.ctrl,
-			beep.Callback(func() {
-				s.finish(true)
-			}),
-		))
-	})
+	_ = speaker.Init(s.format.SampleRate, s.format.SampleRate.N(time.Second/10))
+	speaker.Play(beep.Seq(
+		s.ctrl,
+		beep.Callback(func() {
+			s.finish(true)
+		}),
+	))
 }
 
 func (s *Stream) Toggle() bool {
@@ -83,4 +80,8 @@ func (s *Stream) SetVolume(v, min, max float64) {
 	}
 	s.volume.Volume = v
 	s.volume.Silent = v <= min
+}
+
+func (s *Stream) Progress() float64 {
+	return float64(s.stream.Position()) / float64(s.stream.Len())
 }

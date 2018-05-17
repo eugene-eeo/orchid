@@ -14,22 +14,25 @@ import "github.com/eugene-eeo/orchid/liborchid"
 
 type volumeUI struct {
 	volume float64
-	stream *liborchid.Stream
+	mw     *liborchid.MWorker
 	bar    *liborchid.ProgressBar
 	timer  *time.Timer
-	events chan termbox.Event
 }
 
-func newVolumeUI(stream *liborchid.Stream) *volumeUI {
+func newVolumeUI(mw *liborchid.MWorker) *volumeUI {
 	vol := MAX_VOLUME
-	if stream != nil {
+	if stream := mw.Stream(); stream != nil {
 		vol = stream.Volume()
 	}
+	timer := time.NewTimer(time.Duration(2) * time.Second)
+	go func() {
+		<-timer.C
+		REACTOR.Focus(nil)
+	}()
 	return &volumeUI{
 		bar:    liborchid.NewProgressBar(46, '▊'),
-		timer:  time.NewTimer(time.Duration(2) * time.Second),
-		events: make(chan termbox.Event),
-		stream: stream,
+		timer:  timer,
+		mw:     mw,
 		volume: vol,
 	}
 }
@@ -44,7 +47,7 @@ func (v *volumeUI) render() {
 				2+dx, 3, r,
 				ATTR_DEFAULT, ATTR_DEFAULT)
 		})
-	must(termbox.Sync())
+	must(termbox.Flush())
 }
 
 func (v *volumeUI) resetTimer() {
@@ -53,41 +56,29 @@ func (v *volumeUI) resetTimer() {
 
 func (v *volumeUI) changeVolume(diff float64) {
 	v.volume = math.Max(math.Min(v.volume+diff, MAX_VOLUME), MIN_VOLUME)
-	if v.stream != nil {
-		v.stream.SetVolume(
-			v.volume,
-			MIN_VOLUME,
-			MAX_VOLUME,
-		)
+	v.mw.VolumeChange <- liborchid.VolumeInfo{
+		V:   v.volume,
+		Min: MIN_VOLUME,
+		Max: MAX_VOLUME,
 	}
 }
 
-func (v *volumeUI) Sink() chan termbox.Event {
-	return v.events
+func (v *volumeUI) OnFocus() {
+	v.render()
 }
 
-func (v *volumeUI) Loop() {
-loop:
-	for {
-		v.render()
-		select {
-		case evt := <-v.events:
-			switch evt.Key {
-			case termbox.KeyEsc:
-				if !v.timer.Stop() {
-					<-v.timer.C
-				}
-				break loop
-			case termbox.KeyArrowLeft:
-				v.changeVolume(-0.125)
-				v.resetTimer()
-			case termbox.KeyArrowRight:
-				v.changeVolume(+0.125)
-				v.resetTimer()
-			}
-		case _ = <-v.timer.C:
-			break loop
-		}
+func (v *volumeUI) Handle(evt termbox.Event) {
+	switch evt.Key {
+	case termbox.KeyEsc:
+		v.timer.Stop()
+		REACTOR.Focus(nil)
+		return
+	case termbox.KeyArrowLeft:
+		v.changeVolume(-0.125)
+		v.resetTimer()
+	case termbox.KeyArrowRight:
+		v.changeVolume(+0.125)
+		v.resetTimer()
 	}
-	REACTOR.Focus(nil)
+	v.render()
 }

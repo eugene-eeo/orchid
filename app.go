@@ -14,40 +14,45 @@ var REACTOR *Reactor = nil
 type request func(*hub)
 
 type hub struct {
-	Player   *liborchid.Player
-	Stream   *liborchid.Stream
+	Player   *liborchid.Queue
 	MWorker  *liborchid.MWorker
 	view     *playerView
 	requests chan request
 	done     chan struct{}
-	volume   float64
-	stream   chan termbox.Event
+	progress float64
 }
 
 func (h *hub) Paused() bool {
-	return h.Stream != nil && h.Stream.Paused()
+	if stream := h.Stream(); stream != nil {
+		return stream.Paused()
+	}
+	return false
 }
 
 func (h *hub) Toggle() {
-	if h.Stream != nil {
-		h.Stream.Toggle()
+	if stream := h.Stream(); stream != nil {
+		stream.Toggle()
 	}
 }
 
-func newHub(p *liborchid.Player) *hub {
+func (h *hub) Stream() *liborchid.Stream {
+	return h.MWorker.Stream()
+}
+
+func newHub(p *liborchid.Queue) *hub {
 	return &hub{
 		Player:   p,
 		MWorker:  liborchid.NewMWorker(),
 		view:     newPlayerView(),
 		requests: make(chan request),
 		done:     make(chan struct{}),
-		stream:   make(chan termbox.Event),
 	}
 }
 
 func (h *hub) Render() {
 	h.view.Update(
 		h.Player,
+		h.progress,
 		h.Paused(),
 		h.Player.Shuffle,
 		h.Player.Repeat,
@@ -56,10 +61,11 @@ func (h *hub) Render() {
 
 func (h *hub) Play() {
 	song := h.Player.Song()
-	if song == nil {
-		return
+	if song != nil {
+		go func() {
+			h.MWorker.SongQueue <- song
+		}()
 	}
-	h.MWorker.SongQueue <- song
 }
 
 func (h *hub) handle(evt termbox.Event) {
@@ -77,12 +83,12 @@ func (h *hub) handle(evt termbox.Event) {
 	case 'r':
 		h.Player.ToggleRepeat()
 	case 'f':
+		must(termbox.Sync())
 		f := newFinderUIFromPlayer(h.Player)
 		REACTOR.Focus(f)
 		go func() {
-			f.Loop()
+			song := f.Choice()
 			h.requests <- func(h *hub) {
-				song := f.Choice()
 				if song != nil {
 					h.Player.SetCurrent(song)
 					h.Play()
@@ -93,72 +99,43 @@ func (h *hub) handle(evt termbox.Event) {
 	switch evt.Key {
 	case termbox.KeySpace:
 		h.Toggle()
-	case termbox.KeyArrowLeft:
-		fallthrough
-	case termbox.KeyArrowRight:
-		v := newVolumeUI(h.Stream)
+	case termbox.KeyArrowLeft, termbox.KeyArrowRight:
+		must(termbox.Sync())
+		v := newVolumeUI(h.MWorker)
 		REACTOR.Focus(v)
-		go func() {
-			v.Loop()
-			h.requests <- func(h *hub) {
-				h.volume = v.volume
-				if h.Stream != nil {
-					h.Stream.SetVolume(h.volume, MIN_VOLUME, MAX_VOLUME)
-				}
-			}
-		}()
 	}
 }
 
-func (h *hub) MWLoop() {
-	go h.MWorker.Play()
-	for {
-		res := <-h.MWorker.Results
-		// exit signal
-		if res == nil {
-			break
-		}
-		switch res.State {
-		case liborchid.PlaybackStart:
-			res.Stream.SetVolume(h.volume, MIN_VOLUME, MAX_VOLUME)
-			h.requests <- func(h *hub) {
-				h.Stream = res.Stream
-			}
-		case liborchid.PlaybackEnd:
-			h.requests <- func(h *hub) {
-				h.Stream = nil
-				if res.Error != nil {
-					// playback error
-					h.Player.Remove()
-				} else {
-					// current song interrupted, jump to next song
-					h.Player.Next(1, false)
-				}
-				h.Play()
-			}
-		}
-	}
+func (h *hub) Handle(e termbox.Event) {
+	h.requests <- func(h *hub) { h.handle(e) }
 }
 
-func (h *hub) Sink() chan termbox.Event {
-	return h.stream
+func (h *hub) OnFocus() {
+	h.requests <- func(h *hub) {}
 }
 
 func (h *hub) Loop() {
-	h.Play()
-loop:
 	for {
 		if REACTOR.InFocus(h) {
 			h.Render()
 		}
 		select {
-		case evt := <-h.stream:
-			h.handle(evt)
 		case r := <-h.requests:
 			r(h)
+		case res := <-h.MWorker.Results:
+			if res.State == liborchid.PlaybackEnd {
+				if res.Error != nil {
+					h.Player.Remove(res.Song)
+				} else {
+					h.Player.Next(1, false)
+				}
+				h.Play()
+			}
+		case f := <-h.MWorker.Progress:
+			h.progress = f
 		case <-h.done:
 			h.MWorker.Stop()
-			break loop
+			return
 		}
 	}
 }
@@ -174,10 +151,11 @@ func main() {
 	termbox.SetOutputMode(termbox.Output256)
 	defer termbox.Close()
 
-	h := newHub(liborchid.NewPlayer(songs))
+	h := newHub(liborchid.NewQueue(songs))
 	REACTOR = NewReactor(h)
 
 	go REACTOR.Loop()
-	go h.MWLoop()
+	go h.MWorker.Play()
+	h.Play()
 	h.Loop()
 }

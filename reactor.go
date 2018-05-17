@@ -4,7 +4,8 @@ import "sync"
 import "github.com/nsf/termbox-go"
 
 type Component interface {
-	Sink() chan termbox.Event
+	Handle(termbox.Event)
+	OnFocus()
 }
 
 type Reactor struct {
@@ -27,6 +28,13 @@ func (r *Reactor) Focus(c Component) {
 		c = r.root
 	}
 	r.focused = c
+	c.OnFocus()
+}
+
+func (r *Reactor) Focused() Component {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	return r.focused
 }
 
 func (r *Reactor) InFocus(c Component) bool {
@@ -41,6 +49,6 @@ func (r *Reactor) Loop() {
 		if evt.Type != termbox.EventKey {
 			continue
 		}
-		r.focused.Sink() <- evt
+		r.Focused().Handle(evt)
 	}
 }

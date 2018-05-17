@@ -5,7 +5,9 @@ to use termbox after being inspired by Brandon Rhode's [talk on terminal animati
 Start it up in a directory where there are MP3 files, and `orchid` will
 do the rest:
 
-    $ go get -u github.com/eugene-eeo/orchid
+    $ git clone https://github.com/eugene-eeo/orchid
+    $ cd orchid
+    $ make install
     $ cd totally-legit-music
     $ orchid -h
 
@@ -20,6 +22,8 @@ for me). YMMV.
 [<img src='./screenshots/demo2.png' width='20%'>](./screenshots/demo2.png)
 [<img src='./screenshots/demo3.png' width='20%'>](./screenshots/demo3.png)
 [<img src='./screenshots/demo4.png' width='20%'>](./screenshots/demo4.png)
+
+Screenshots are taken in iTerm with margin and title-less windows.
 
 ## controls
 

@@ -57,9 +57,7 @@ func (i *Input) Feed(key termbox.Key, ch rune, mod termbox.Modifier) {
 		i.Move(-1)
 	case termbox.KeyArrowRight:
 		i.Move(1)
-	case termbox.KeyBackspace2:
-		fallthrough
-	case termbox.KeyBackspace:
+	case termbox.KeyBackspace, termbox.KeyBackspace2:
 		i.Delete()
 	case termbox.KeySpace:
 		i.Insert(' ')
