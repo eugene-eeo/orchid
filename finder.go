@@ -78,15 +78,15 @@ func (f *FinderUI) RenderQuery() {
 }
 
 func (f *FinderUI) RenderResults() {
-	j := 0
+	y := 1
 	for i := f.viewbox.Lo(); i < f.viewbox.Hi(); i++ {
 		song := f.Get(f.results[i])
 		color := ATTR_DEFAULT
 		if i == f.cursor {
 			color = termbox.AttrReverse
 		}
-		drawName(song.Name(), 0, j+1, color)
-		j++
+		drawName(song.Name(), 0, y, color)
+		y++
 	}
 }
 

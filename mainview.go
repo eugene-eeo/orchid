@@ -14,8 +14,8 @@ const ATTR_DEFAULT = termbox.ColorDefault
 // │  8x16  │ <Play/Pause> Title
 // │        │    Artist
 // │        │    Track [i/n]
-// │        │  Next (1)
-// └────────┘  Next (2)
+// │        │
+// └────────┘ Progress
 //
 
 type playerView struct {

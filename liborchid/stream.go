@@ -6,6 +6,26 @@ import "github.com/faiface/beep"
 import "github.com/faiface/beep/effects"
 import "github.com/faiface/beep/speaker"
 
+type VolumeInfo struct {
+	V   float64
+	Min float64
+	Max float64
+}
+
+func (v VolumeInfo) Volume() float64 {
+	if v.V > v.Max {
+		return v.Max
+	}
+	if v.V < v.Min {
+		return v.Min
+	}
+	return v.V
+}
+
+func (v VolumeInfo) Silent() bool {
+	return v.V <= v.Min
+}
+
 type Stream struct {
 	stream     beep.StreamSeekCloser
 	format     beep.Format
@@ -71,15 +91,9 @@ func (s *Stream) Volume() float64 {
 	return s.volume.Volume
 }
 
-func (s *Stream) SetVolume(v, min, max float64) {
-	if v > max {
-		v = max
-	}
-	if v < min {
-		v = min
-	}
-	s.volume.Volume = v
-	s.volume.Silent = v <= min
+func (s *Stream) SetVolume(v VolumeInfo) {
+	s.volume.Volume = v.Volume()
+	s.volume.Silent = v.Silent()
 }
 
 func (s *Stream) Progress() float64 {

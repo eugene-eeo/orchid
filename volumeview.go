@@ -20,10 +20,6 @@ type volumeUI struct {
 }
 
 func newVolumeUI(mw *liborchid.MWorker) *volumeUI {
-	vol := MAX_VOLUME
-	if stream := mw.Stream(); stream != nil {
-		vol = stream.Volume()
-	}
 	timer := time.NewTimer(time.Duration(2) * time.Second)
 	go func() {
 		<-timer.C
@@ -31,9 +27,9 @@ func newVolumeUI(mw *liborchid.MWorker) *volumeUI {
 	}()
 	return &volumeUI{
 		bar:    liborchid.NewProgressBar(46, '▊'),
+		volume: mw.VolumeInfo().Volume(),
 		timer:  timer,
 		mw:     mw,
-		volume: vol,
 	}
 }
 
