@@ -126,7 +126,7 @@ func (h *hub) Loop() {
 			if res.Error != nil {
 				h.Player.Remove(res.Song)
 				h.Play()
-			} else if res.State == liborchid.PlaybackEnd && res.Complete {
+			} else if res.Complete {
 				h.Player.Next(1, false)
 				h.Play()
 			}

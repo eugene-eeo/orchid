@@ -3,13 +3,7 @@ package liborchid
 import "time"
 import "sync"
 
-const (
-	PlaybackStart = iota
-	PlaybackEnd
-)
-
 type PlaybackResult struct {
-	State    int
 	Song     *Song
 	Stream   *Stream
 	Complete bool
@@ -70,10 +64,9 @@ func (mw *MWorker) Stop() {
 	mw.stop <- struct{}{}
 }
 
-func (mw *MWorker) report(state int, stream *Stream, song *Song, complete bool, err error) {
+func (mw *MWorker) report(stream *Stream, song *Song, complete bool, err error) {
 	go func() {
 		mw.Results <- &PlaybackResult{
-			State:    state,
 			Song:     song,
 			Stream:   stream,
 			Complete: complete,
@@ -94,7 +87,7 @@ func (mw *MWorker) Play() {
 			// continue playing the next stream
 			stream, err := song.Stream()
 			if err != nil {
-				mw.report(PlaybackEnd, nil, song, false, err)
+				mw.report(nil, song, false, err)
 				break
 			}
 			stream.Play()
@@ -107,7 +100,8 @@ func (mw *MWorker) Play() {
 				for {
 					select {
 					case d := <-c:
-						mw.report(PlaybackEnd, stream, song, d, nil)
+						mw.report(stream, song, d, nil)
+						mw.setStream(nil)
 						t.Stop()
 						return
 					case <-t.C:
