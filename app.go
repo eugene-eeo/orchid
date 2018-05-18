@@ -87,7 +87,7 @@ func (h *hub) handle(evt termbox.Event) {
 		f := newFinderUIFromPlayer(h.Player)
 		REACTOR.Focus(f)
 		go func() {
-			song := f.Choice()
+			song := <-f.Choice
 			h.requests <- func(h *hub) {
 				if song != nil {
 					h.Player.SetCurrent(song)

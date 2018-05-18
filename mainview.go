@@ -45,14 +45,14 @@ func (pv *playerView) drawImage() {
 }
 
 func (pv *playerView) drawMetaData() {
-	meta := pv.metadata
-	if meta == nil {
+	m := pv.metadata
+	if m == nil {
 		return
 	}
-	album := defaultString(meta.Album(), "Unknown album")
-	year := defaultString(defaultInt(meta.Year()), "?")
-	artist := defaultString(meta.Artist(), "Unknown artist")
-	track, total := meta.Track()
+	album := defaultString(m.Album(), "Unknown album")
+	year := defaultString(defaultInt(m.Year()), "?")
+	artist := defaultString(m.Artist(), "Unknown artist")
+	track, total := m.Track()
 
 	drawName(fmt.Sprintf("%s (%s)", album, year), 20, 1, ATTR_DEFAULT)
 	drawName(artist, 20, 3, ATTR_DEFAULT)
@@ -60,15 +60,15 @@ func (pv *playerView) drawMetaData() {
 }
 
 func (pv *playerView) drawProgress(progress float64) {
-	b := int(progress * 32)
-	for i := 0; i <= 31; i++ {
+	b := int(progress*32) + 18
+	for x := 18; x < 50; x++ {
 		a := ATTR_DIM
-		if i <= b {
+		if x <= b {
 			a = ATTR_DEFAULT
 		}
-		termbox.SetCell(18+i, 6, '─', a, ATTR_DEFAULT)
+		termbox.SetCell(x, 6, '─', a, ATTR_DEFAULT)
 	}
-	termbox.SetCell(18+b, 6, '╼', ATTR_DEFAULT, ATTR_DEFAULT)
+	termbox.SetCell(b, 6, '╼', ATTR_DEFAULT, ATTR_DEFAULT)
 }
 
 func (pv *playerView) Update(player *liborchid.Queue, progress float64, paused, shuffle, repeat bool) {
@@ -96,11 +96,10 @@ func getSongTitle(song *liborchid.Song, metadata tag.Metadata) string {
 	if song == nil {
 		return "<No Songs>"
 	}
-	name := song.Name()
 	if metadata != nil {
-		name = defaultString(metadata.Title(), name)
+		return defaultString(metadata.Title(), song.Name())
 	}
-	return name
+	return song.Name()
 }
 
 func getPlayingIndicator(paused, shuffle bool) string {

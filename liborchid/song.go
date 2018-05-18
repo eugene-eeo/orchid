@@ -20,6 +20,7 @@ func FindSongs(dir string, recursive bool) (songs []*Song) {
 	if err != nil {
 		return
 	}
+	defer f.Close()
 	if names, err := f.Readdirnames(-1); err == nil {
 		for _, name := range names {
 			if filepath.Ext(name) == ".mp3" {
