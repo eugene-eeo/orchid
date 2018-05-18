@@ -12,9 +12,9 @@ there are MP3 files, and `orchid` will do the rest:
     $ orchid -h
 
 Ideally ran in a terminal with size 50x8; you could run it on something
-larger, but it doesn't respond to larger/smaller sizes. On OSX, the album
-art is only properly displayed on tmux, (at least for me) for whatever
-reason. YMMV.
+larger, but it doesn't respond to larger/smaller sizes. You'll need a
+terminal with true-colour support (see iTerm on OSX) for the album art
+to display properly.
 
 ## screenshots
 
