@@ -26,16 +26,8 @@
   name = "github.com/dhowden/tag"
 
 [[constraint]]
-  name = "github.com/eliukblau/pixterm"
-  version = "1.2.2"
-
-[[constraint]]
   branch = "master"
   name = "github.com/faiface/beep"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/lucasb-eyer/go-colorful"
 
 [[constraint]]
   name = "github.com/mattn/go-runewidth"

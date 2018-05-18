@@ -20,12 +20,6 @@
   version = "v1.4.2"
 
 [[projects]]
-  name = "github.com/eliukblau/pixterm"
-  packages = ["ansimage"]
-  revision = "a39660c811b7075c5de15f35350f27d6d4dfe630"
-  version = "v1.2.3"
-
-[[projects]]
   branch = "master"
   name = "github.com/faiface/beep"
   packages = [
@@ -74,12 +68,6 @@
   revision = "7a1d13b19d823f7672135569e7a2d040046252e8"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/lucasb-eyer/go-colorful"
-  packages = ["."]
-  revision = "fa0f842f26263fb2ace6d6118309c8481e029fc1"
-
-[[projects]]
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
   revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
@@ -126,6 +114,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8f112dcb91baf84d5007652dfab6aaa25d9bbe468a5ca560283dfe9140b55bf3"
+  inputs-digest = "daa7e355ef548207882fd6e2efadb3bef9ea8745ea5d58921b31bbdf354e0f1d"
   solver-name = "gps-cdcl"
   solver-version = 1
