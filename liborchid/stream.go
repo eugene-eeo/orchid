@@ -87,10 +87,6 @@ func (s *Stream) Complete() <-chan bool {
 	return s.done
 }
 
-func (s *Stream) Volume() float64 {
-	return s.volume.Volume
-}
-
 func (s *Stream) SetVolume(v VolumeInfo) {
 	s.volume.Volume = v.Volume()
 	s.volume.Silent = v.Silent()

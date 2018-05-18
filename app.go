@@ -82,7 +82,7 @@ func (h *hub) handle(evt termbox.Event) {
 		h.Player.ToggleShuffle()
 	case 'r':
 		h.Player.ToggleRepeat()
-	case 'f':
+	case '/':
 		must(termbox.Sync())
 		f := newFinderUIFromPlayer(h.Player)
 		REACTOR.Focus(f)
@@ -123,12 +123,11 @@ func (h *hub) Loop() {
 		case r := <-h.requests:
 			r(h)
 		case res := <-h.MWorker.Results:
-			if res.State == liborchid.PlaybackEnd {
-				if res.Error != nil {
-					h.Player.Remove(res.Song)
-				} else {
-					h.Player.Next(1, false)
-				}
+			if res.Error != nil {
+				h.Player.Remove(res.Song)
+				h.Play()
+			} else if res.State == liborchid.PlaybackEnd && res.Complete {
+				h.Player.Next(1, false)
 				h.Play()
 			}
 		case f := <-h.MWorker.Progress:

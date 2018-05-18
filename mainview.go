@@ -27,7 +27,7 @@ type playerView struct {
 func newPlayerView() *playerView {
 	return &playerView{
 		current: nil,
-		image:   DefaultImage.Render(),
+		image:   DefaultImage,
 	}
 }
 
@@ -77,7 +77,7 @@ func (pv *playerView) Update(player *liborchid.Queue, progress float64, paused, 
 	if song != nil && song != pv.current {
 		pv.current = song
 		pv.metadata = song.Metadata()
-		pv.image = getImage(pv.metadata).Render()
+		pv.image = getImage(pv.metadata)
 	}
 	pv.drawMetaData()
 	pv.drawCurrent(2, paused, shuffle, repeat)

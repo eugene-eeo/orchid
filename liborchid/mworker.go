@@ -42,18 +42,6 @@ func NewMWorker() *MWorker {
 	}
 }
 
-func (mw *MWorker) report(state int, song *Song, stream *Stream, complete bool, err error) {
-	go func() {
-		mw.Results <- &PlaybackResult{
-			State:    state,
-			Song:     song,
-			Stream:   stream,
-			Complete: complete,
-			Error:    err,
-		}
-	}()
-}
-
 func (mw *MWorker) VolumeInfo() VolumeInfo {
 	mw.mux.Lock()
 	defer mw.mux.Unlock()
@@ -82,14 +70,31 @@ func (mw *MWorker) Stop() {
 	mw.stop <- struct{}{}
 }
 
+func (mw *MWorker) report(state int, stream *Stream, song *Song, complete bool, err error) {
+	go func() {
+		mw.Results <- &PlaybackResult{
+			State:    state,
+			Song:     song,
+			Stream:   stream,
+			Complete: complete,
+			Error:    err,
+		}
+	}()
+}
+
 func (mw *MWorker) Play() {
-	interval := time.NewTicker(time.Duration(1) * time.Second)
 	for {
 		select {
 		case song := <-mw.SongQueue:
+			// If there's a current stream we need to stop it first so that
+			// there is no leaked channels.
+			if s := mw.Stream(); s != nil {
+				s.Stop()
+			}
+			// continue playing the next stream
 			stream, err := song.Stream()
 			if err != nil {
-				mw.report(PlaybackEnd, song, nil, false, err)
+				mw.report(PlaybackEnd, nil, song, false, err)
 				break
 			}
 			stream.Play()
@@ -97,17 +102,23 @@ func (mw *MWorker) Play() {
 			mw.setStream(stream)
 			go func() {
 				mw.Progress <- 0.0
-				mw.report(PlaybackEnd, song, stream, <-stream.Complete(), nil)
-				mw.setStream(nil)
+				t := time.NewTicker(time.Duration(1) * time.Second)
+				c := stream.Complete()
+				for {
+					select {
+					case d := <-c:
+						mw.report(PlaybackEnd, stream, song, d, nil)
+						t.Stop()
+						return
+					case <-t.C:
+						mw.Progress <- stream.Progress()
+					}
+				}
 			}()
 		case vol := <-mw.VolumeChange:
 			mw.setVolume(vol)
 			if s := mw.Stream(); s != nil {
 				s.SetVolume(vol)
-			}
-		case <-interval.C:
-			if s := mw.Stream(); s != nil {
-				mw.Progress <- s.Progress()
 			}
 		case <-mw.stop:
 			return

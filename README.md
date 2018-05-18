@@ -33,7 +33,7 @@ colour profile.
 - `r` toggle repeat song/playlist
 - `<left>` / `<right>` to adjust volume
 - `<space>` pause/play
-- `f` find mode
+- `/` find mode
   - `<enter>` confirm selection
   - `<esc>` cancel
 - `s` toggle shuffle mode

@@ -9,7 +9,7 @@ type Component interface {
 }
 
 type Reactor struct {
-	mutex   sync.Mutex
+	sync.Mutex
 	focused Component
 	root    Component
 }
@@ -22,8 +22,8 @@ func NewReactor(root Component) *Reactor {
 }
 
 func (r *Reactor) Focus(c Component) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.Lock()
+	defer r.Unlock()
 	if c == nil {
 		c = r.root
 	}
@@ -32,14 +32,14 @@ func (r *Reactor) Focus(c Component) {
 }
 
 func (r *Reactor) Focused() Component {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.Lock()
+	defer r.Unlock()
 	return r.focused
 }
 
 func (r *Reactor) InFocus(c Component) bool {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.Lock()
+	defer r.Unlock()
 	return r.focused == c
 }
 

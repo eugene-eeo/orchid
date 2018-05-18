@@ -3,26 +3,25 @@ package main
 import "fmt"
 import "github.com/mattn/go-runewidth"
 import "github.com/gobuffalo/packr"
-import "github.com/eliukblau/pixterm/ansimage"
-import "github.com/lucasb-eyer/go-colorful"
+import "github.com/eugene-eeo/orchid/ansimage"
 import "github.com/dhowden/tag"
+import "image/color"
 import "bytes"
 
-var DefaultImage *ansimage.ANSImage = nil
+var DefaultImage string = ""
 
 func init() {
 	img, err := bytesToImage(packr.NewBox("./assets").Bytes("default.png"))
 	must(err)
-	DefaultImage = img
+	DefaultImage = img.Render()
 }
 
 func bytesToImage(data []byte) (*ansimage.ANSImage, error) {
 	return ansimage.NewScaledFromReader(
 		bytes.NewReader(data),
 		16, 16,
-		colorful.LinearRgb(0, 0, 0),
+		color.RGBA{0, 0, 0, 0xff},
 		ansimage.ScaleModeResize,
-		ansimage.NoDithering,
 	)
 }
 
@@ -52,7 +51,7 @@ func unicodeCells(s string, width int, fill bool, f func(int, rune)) {
 	}
 }
 
-func getImage(metadata tag.Metadata) (img *ansimage.ANSImage) {
+func getImage(metadata tag.Metadata) (img string) {
 	img = DefaultImage
 	if metadata == nil {
 		return
@@ -62,7 +61,7 @@ func getImage(metadata tag.Metadata) (img *ansimage.ANSImage) {
 		return
 	}
 	if rv, err := bytesToImage(p.Data); err == nil {
-		return rv
+		return rv.Render()
 	}
 	return
 }
