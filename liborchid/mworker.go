@@ -46,12 +46,16 @@ func (mw *MWorker) setVolume(v VolumeInfo) {
 	mw.mux.Lock()
 	defer mw.mux.Unlock()
 	mw.volume = v
+	if mw.stream != nil {
+		mw.stream.SetVolume(v)
+	}
 }
 
 func (mw *MWorker) setStream(stream *Stream) {
 	mw.mux.Lock()
 	defer mw.mux.Unlock()
 	mw.stream = stream
+	stream.SetVolume(mw.volume)
 }
 
 func (mw *MWorker) Stream() *Stream {
@@ -90,9 +94,8 @@ func (mw *MWorker) Play() {
 				mw.report(nil, song, false, err)
 				break
 			}
-			stream.Play()
-			stream.SetVolume(mw.VolumeInfo())
 			mw.setStream(stream)
+			stream.Play()
 			go func() {
 				mw.Progress <- 0.0
 				t := time.NewTicker(time.Duration(1) * time.Second)
@@ -111,9 +114,6 @@ func (mw *MWorker) Play() {
 			}()
 		case vol := <-mw.VolumeChange:
 			mw.setVolume(vol)
-			if s := mw.Stream(); s != nil {
-				s.SetVolume(vol)
-			}
 		case <-mw.stop:
 			return
 		}
