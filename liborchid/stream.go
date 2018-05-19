@@ -55,10 +55,10 @@ func NewStream(stream beep.StreamSeekCloser, format beep.Format) *Stream {
 }
 
 func (s *Stream) finish(completed bool) {
-	s.finishOnce.Do((func() {
+	s.finishOnce.Do(func() {
 		_ = s.stream.Close()
 		s.done <- completed
-	}))
+	})
 }
 
 func (s *Stream) Stop() {

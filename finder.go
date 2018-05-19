@@ -10,7 +10,7 @@ import (
 
 type item struct {
 	str      string
-	idx      int
+	song     *liborchid.Song
 	distance int
 }
 
@@ -29,7 +29,6 @@ func matchAll(query string, haystack []*item) []*item {
 }
 
 type FinderUI struct {
-	songs   []*liborchid.Song
 	items   []*item
 	results []*item
 	input   *liborchid.Input
@@ -42,12 +41,11 @@ func newFinderUIFromPlayer(p *liborchid.Queue) *FinderUI {
 	items := make([]*item, len(p.Songs))
 	for i, song := range p.Songs {
 		items[i] = &item{
-			str: strings.ToLower(song.Name()),
-			idx: i,
+			str:  strings.ToLower(song.Name()),
+			song: song,
 		}
 	}
 	return &FinderUI{
-		songs:   p.Songs,
 		items:   items,
 		results: items,
 		input:   liborchid.NewInput(),
@@ -55,10 +53,6 @@ func newFinderUIFromPlayer(p *liborchid.Queue) *FinderUI {
 		Choice:  make(chan *liborchid.Song),
 		cursor:  0,
 	}
-}
-
-func (f *FinderUI) Get(i *item) *liborchid.Song {
-	return f.songs[i.idx]
 }
 
 // > ________________ 48x1 => 46x1 query
@@ -83,7 +77,7 @@ func (f *FinderUI) RenderQuery() {
 func (f *FinderUI) RenderResults() {
 	y := 1
 	for i := f.viewbox.Lo(); i < f.viewbox.Hi(); i++ {
-		song := f.Get(f.results[i])
+		song := f.results[i].song
 		color := ATTR_DEFAULT
 		if i == f.cursor {
 			color = termbox.AttrReverse
@@ -104,7 +98,7 @@ func (f *FinderUI) selected() *liborchid.Song {
 	if len(f.results) == 0 || f.cursor < 0 {
 		return nil
 	}
-	return f.Get(f.results[f.cursor])
+	return f.results[f.cursor].song
 }
 
 func (f *FinderUI) OnFocus() {

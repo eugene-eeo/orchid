@@ -1,9 +1,12 @@
 package main
 
-import "fmt"
-import "github.com/nsf/termbox-go"
-import "github.com/eugene-eeo/orchid/liborchid"
-import "github.com/dhowden/tag"
+import (
+	"fmt"
+
+	"github.com/dhowden/tag"
+	"github.com/eugene-eeo/orchid/liborchid"
+	"github.com/nsf/termbox-go"
+)
 
 const ATTR_DIM = termbox.Attribute(0xf0)
 const ATTR_DEFAULT = termbox.ColorDefault
@@ -60,7 +63,7 @@ func (pv *playerView) drawMetaData() {
 }
 
 func (pv *playerView) drawProgress(progress float64) {
-	b := int(progress*32) + 18
+	b := int(progress*31) + 18
 	for x := 18; x < 50; x++ {
 		a := ATTR_DIM
 		if x <= b {
