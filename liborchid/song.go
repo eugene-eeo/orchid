@@ -1,9 +1,12 @@
 package liborchid
 
-import "os"
-import "path/filepath"
-import "github.com/faiface/beep/mp3"
-import "github.com/dhowden/tag"
+import (
+	"os"
+	"path/filepath"
+
+	"github.com/dhowden/tag"
+	"github.com/faiface/beep/mp3"
+)
 
 func FindSongs(dir string, recursive bool) (songs []*Song) {
 	songs = []*Song{}

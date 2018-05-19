@@ -1,12 +1,15 @@
 package liborchid_test
 
-import "strings"
-import "math/rand"
-import "reflect"
-import "testing"
-import "testing/quick"
-import "github.com/eugene-eeo/orchid/liborchid"
-import "github.com/stretchr/testify/assert"
+import (
+	"math/rand"
+	"reflect"
+	"strings"
+	"testing"
+	"testing/quick"
+
+	"github.com/eugene-eeo/orchid/liborchid"
+	"github.com/stretchr/testify/assert"
+)
 
 func max(a, b int) int {
 	if a > b {

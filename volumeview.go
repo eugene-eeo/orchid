@@ -1,16 +1,15 @@
 package main
 
-import "time"
-import "math"
-import "github.com/nsf/termbox-go"
-import "github.com/eugene-eeo/orchid/liborchid"
+import (
+	"math"
+	"time"
 
-// Layout (50x8)
-//
-//  3x space
-//   BLOCK CHARACTERS 46x1
-//  4x space
-//
+	"github.com/eugene-eeo/orchid/liborchid"
+	"github.com/nsf/termbox-go"
+)
+
+const MAX_VOLUME float64 = +0.0
+const MIN_VOLUME float64 = -12.0
 
 type volumeUI struct {
 	volume float64
@@ -33,6 +32,12 @@ func newVolumeUI(mw *liborchid.MWorker) *volumeUI {
 	}
 }
 
+// Layout (50x8)
+//
+//  3x space
+//   BLOCK CHARACTERS 46x1
+//  4x space
+//
 func (v *volumeUI) render() {
 	ratio := (v.volume - MIN_VOLUME) / (MAX_VOLUME - MIN_VOLUME)
 	must(termbox.Clear(ATTR_DEFAULT, ATTR_DEFAULT))

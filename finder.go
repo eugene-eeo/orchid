@@ -1,9 +1,12 @@
 package main
 
-import "strings"
-import "sort"
-import "github.com/eugene-eeo/orchid/liborchid"
-import "github.com/nsf/termbox-go"
+import (
+	"sort"
+	"strings"
+
+	"github.com/eugene-eeo/orchid/liborchid"
+	"github.com/nsf/termbox-go"
+)
 
 type item struct {
 	str      string

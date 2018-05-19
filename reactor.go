@@ -1,7 +1,10 @@
 package main
 
-import "sync"
-import "github.com/nsf/termbox-go"
+import (
+	"sync"
+
+	"github.com/nsf/termbox-go"
+)
 
 type Component interface {
 	Handle(termbox.Event)

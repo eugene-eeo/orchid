@@ -1,13 +1,13 @@
 package main
 
-import "flag"
-import "time"
-import "math/rand"
-import "github.com/nsf/termbox-go"
-import "github.com/eugene-eeo/orchid/liborchid"
+import (
+	"flag"
+	"math/rand"
+	"time"
 
-const MAX_VOLUME float64 = +0.0
-const MIN_VOLUME float64 = -8.0
+	"github.com/eugene-eeo/orchid/liborchid"
+	"github.com/nsf/termbox-go"
+)
 
 var REACTOR *Reactor = nil
 
@@ -82,7 +82,7 @@ func (h *hub) handle(evt termbox.Event) {
 		h.Player.ToggleShuffle()
 	case 'r':
 		h.Player.ToggleRepeat()
-	case '/':
+	case 'f':
 		must(termbox.Sync())
 		f := newFinderUIFromPlayer(h.Player)
 		REACTOR.Focus(f)

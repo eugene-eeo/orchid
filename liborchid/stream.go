@@ -1,10 +1,13 @@
 package liborchid
 
-import "sync"
-import "time"
-import "github.com/faiface/beep"
-import "github.com/faiface/beep/effects"
-import "github.com/faiface/beep/speaker"
+import (
+	"sync"
+	"time"
+
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/effects"
+	"github.com/faiface/beep/speaker"
+)
 
 type VolumeInfo struct {
 	V   float64

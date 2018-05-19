@@ -1,12 +1,15 @@
 package main
 
-import "fmt"
-import "github.com/mattn/go-runewidth"
-import "github.com/gobuffalo/packr"
-import "github.com/eugene-eeo/orchid/ansimage"
-import "github.com/dhowden/tag"
-import "image/color"
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+	"image/color"
+
+	"github.com/dhowden/tag"
+	"github.com/eugene-eeo/orchid/ansimage"
+	"github.com/gobuffalo/packr"
+	"github.com/mattn/go-runewidth"
+)
 
 var DefaultImage string = ""
 

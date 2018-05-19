@@ -1,9 +1,12 @@
 package liborchid_test
 
-import "fmt"
-import "testing"
-import "github.com/eugene-eeo/orchid/liborchid"
-import "github.com/stretchr/testify/assert"
+import (
+	"fmt"
+	"testing"
+
+	"github.com/eugene-eeo/orchid/liborchid"
+	"github.com/stretchr/testify/assert"
+)
 
 type matchTest struct {
 	query    string

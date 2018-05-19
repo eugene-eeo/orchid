@@ -1,7 +1,9 @@
 package liborchid
 
-import "time"
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 type PlaybackResult struct {
 	Song     *Song
@@ -55,7 +57,9 @@ func (mw *MWorker) setStream(stream *Stream) {
 	mw.mux.Lock()
 	defer mw.mux.Unlock()
 	mw.stream = stream
-	stream.SetVolume(mw.volume)
+	if stream != nil {
+		stream.SetVolume(mw.volume)
+	}
 }
 
 func (mw *MWorker) Stream() *Stream {
@@ -79,39 +83,52 @@ func (mw *MWorker) report(stream *Stream, song *Song, complete bool, err error) 
 	}()
 }
 
+func (mw *MWorker) playSong(song *Song) {
+	// If there's a current stream we need to stop it first so that
+	// there is no leaked channels.
+	if s := mw.Stream(); s != nil {
+		s.Stop()
+	}
+	if song == nil {
+		return
+	}
+	// continue playing the next stream
+	stream, err := song.Stream()
+	if err != nil {
+		mw.report(nil, song, false, err)
+		return
+	}
+	mw.setStream(stream)
+	stream.Play()
+	go func() {
+		mw.Progress <- 0.0
+		t := time.NewTicker(time.Second * 1)
+		c := stream.Complete()
+		for {
+			select {
+			case d := <-c:
+				mw.report(stream, song, d, nil)
+				mw.setStream(nil)
+				t.Stop()
+				return
+			case <-t.C:
+				mw.Progress <- stream.Progress()
+			}
+		}
+	}()
+}
+
 func (mw *MWorker) Play() {
+	d := time.Millisecond * 50
+	t := time.NewTimer(d)
+	t.Stop()
+	var song *Song
 	for {
 		select {
-		case song := <-mw.SongQueue:
-			// If there's a current stream we need to stop it first so that
-			// there is no leaked channels.
-			if s := mw.Stream(); s != nil {
-				s.Stop()
-			}
-			// continue playing the next stream
-			stream, err := song.Stream()
-			if err != nil {
-				mw.report(nil, song, false, err)
-				break
-			}
-			mw.setStream(stream)
-			stream.Play()
-			go func() {
-				mw.Progress <- 0.0
-				t := time.NewTicker(time.Duration(1) * time.Second)
-				c := stream.Complete()
-				for {
-					select {
-					case d := <-c:
-						mw.report(stream, song, d, nil)
-						mw.setStream(nil)
-						t.Stop()
-						return
-					case <-t.C:
-						mw.Progress <- stream.Progress()
-					}
-				}
-			}()
+		case song = <-mw.SongQueue:
+			t.Reset(d)
+		case <-t.C:
+			mw.playSong(song)
 		case vol := <-mw.VolumeChange:
 			mw.setVolume(vol)
 		case <-mw.stop:

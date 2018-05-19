@@ -1,7 +1,9 @@
 package liborchid
 
-import "math/rand"
-import "sort"
+import (
+	"math/rand"
+	"sort"
+)
 
 func shuffle(xs []*Song, i int) int {
 	x := xs[i]
