@@ -9,7 +9,7 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-var REACTOR *Reactor = nil
+var REACTOR *Reactor
 
 type request func(*hub)
 

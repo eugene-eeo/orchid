@@ -17,11 +17,11 @@ type matchTest struct {
 
 func TestMatch(t *testing.T) {
 	tests := []matchTest{
-		matchTest{"def", "define", true, 0},
-		matchTest{"def", "deefine", true, 1},
-		matchTest{"d", "efine", false, -1},
-		matchTest{"mid", "start mid end", true, 0},
-		matchTest{"谢谢", "CJK谢谢", true, 0},
+		{"def", "define", true, 0},
+		{"def", "deefine", true, 1},
+		{"d", "efine", false, -1},
+		{"mid", "start mid end", true, 0},
+		{"谢谢", "CJK谢谢", true, 0},
 	}
 
 	for _, m := range tests {

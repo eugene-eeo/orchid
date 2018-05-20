@@ -22,7 +22,7 @@ func matchAll(query string, haystack []*item) []*item {
 			x.distance = d
 		}
 	}
-	sort.Slice(matching, func(i, j int) bool {
+	sort.SliceStable(matching, func(i, j int) bool {
 		return matching[i].distance < matching[j].distance
 	})
 	return matching

@@ -11,7 +11,7 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
-var DefaultImage string = ""
+var DefaultImage string
 
 func init() {
 	img, err := bytesToImage(packr.NewBox("./assets").Bytes("default.png"))
