@@ -40,9 +40,3 @@ colour profile.
 - `n` next track
 - `p` prev track
 - `q` quit
-
-## todo
-
-- [x] `go dep`
-- [x] write tests
-- [x] refactor
