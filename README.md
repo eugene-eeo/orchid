@@ -46,4 +46,3 @@ colour profile.
 - [x] `go dep`
 - [x] write tests
 - [x] refactor
-- [ ] write more tests
