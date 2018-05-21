@@ -143,6 +143,7 @@ func main() {
 	songs := liborchid.FindSongs(".", *recursive)
 
 	must(termbox.Init())
+	termbox.SetOutputMode(termbox.Output256)
 	defer termbox.Close()
 
 	h := newHub(liborchid.NewQueue(songs))
