@@ -8,7 +8,7 @@ import (
 func shuffle(xs []*Song, i int) int {
 	x := xs[i]
 	for j := 0; j < len(xs); j++ {
-		r := rand.Intn(len(xs))
+		r := j + rand.Intn(len(xs)-j)
 		xs[j], xs[r] = xs[r], xs[j]
 		if xs[j] == x {
 			i = j

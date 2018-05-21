@@ -1,5 +1,9 @@
 # orchid
 
+> _“What does an orchid have to do with playing music? You sort of get tons of
+> orchids in the jungle and they require very little water to live. You should
+> name it after some musical instrument, but that's probably already taken.”_
+
 Very tiny MP3 player for _my_ needs. Mostly an excuse for me to learn how
 to use termbox (after being inspired by Brandon Rhode's [talk on terminal animations](https://youtu.be/rrMnmLyYjU8)),
 as well as how to write my own UI loop. Start it up in a directory where
