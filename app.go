@@ -23,20 +23,16 @@ type hub struct {
 }
 
 func (h *hub) Paused() bool {
-	if stream := h.Stream(); stream != nil {
+	if stream := h.MWorker.Stream(); stream != nil {
 		return stream.Paused()
 	}
 	return false
 }
 
 func (h *hub) Toggle() {
-	if stream := h.Stream(); stream != nil {
+	if stream := h.MWorker.Stream(); stream != nil {
 		stream.Toggle()
 	}
-}
-
-func (h *hub) Stream() *liborchid.Stream {
-	return h.MWorker.Stream()
 }
 
 func newHub(p *liborchid.Queue) *hub {
@@ -147,7 +143,6 @@ func main() {
 	songs := liborchid.FindSongs(".", *recursive)
 
 	must(termbox.Init())
-	termbox.SetOutputMode(termbox.Output256)
 	defer termbox.Close()
 
 	h := newHub(liborchid.NewQueue(songs))

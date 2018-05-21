@@ -2,6 +2,7 @@ PHONY: build
 
 install:
 	go get -u github.com/gobuffalo/packr/...
+	dep ensure
 	make release
 
 test:
@@ -9,7 +10,6 @@ test:
 
 build: test
 	packr build
-	packr install .
 
 release:
 	packr -z

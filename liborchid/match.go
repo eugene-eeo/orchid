@@ -11,10 +11,8 @@ func Match(a, b string) (matched bool, distance int) {
 	q := []rune(a)
 	r := []rune(b)
 	n := len(r)
-	// s = # of gaps in between consecutive characters
-	// m = when to start counting
-	s := 0
-	m := false
+	s := 0     // # of gaps in between consecutive characters
+	m := false // when to start counting
 outer:
 	for _, c := range q {
 		for i != n {

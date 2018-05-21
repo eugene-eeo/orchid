@@ -34,13 +34,13 @@ func newPlayerView() *playerView {
 	}
 }
 
-func (pv *playerView) drawCurrent(y int, paused bool, shuffle bool, repeat bool) {
+func (pv *playerView) drawCurrent(paused, shuffle, repeat bool) {
 	name := getPlayingIndicator(paused, shuffle) + " " + getSongTitle(pv.current, pv.metadata)
 	attr := termbox.AttrBold
 	if repeat {
 		attr = termbox.AttrReverse
 	}
-	drawName(name, 18, y, attr)
+	drawName(name, 18, 2, attr)
 }
 
 func (pv *playerView) drawImage() {
@@ -83,7 +83,7 @@ func (pv *playerView) Update(player *liborchid.Queue, progress float64, paused, 
 		pv.image = getImage(pv.metadata)
 	}
 	pv.drawMetaData()
-	pv.drawCurrent(2, paused, shuffle, repeat)
+	pv.drawCurrent(paused, shuffle, repeat)
 	pv.drawProgress(progress)
 	must(termbox.Flush())
 	pv.drawImage()
