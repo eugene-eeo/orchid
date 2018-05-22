@@ -20,6 +20,11 @@ larger, but it doesn't respond to larger/smaller sizes. You'll need a
 terminal with true-colour support (see iTerm on OSX) for the album art
 to display properly.
 
+## prerequisites
+
+Requires [hajemoshi/oto](https://github.com/hajimehoshi/oto#prerequisite)
+so make sure you can follow the instructions (especially on Linux/FreeBSD).
+
 ## screenshots
 
 [<img src='./screenshots/demo1.png' width='20%'>](./screenshots/demo1.png)
