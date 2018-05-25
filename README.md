@@ -22,7 +22,7 @@ to display properly.
 
 ## prerequisites
 
-Requires [hajemoshi/oto](https://github.com/hajimehoshi/oto#prerequisite)
+Requires [golang/dep](https://github.com/golang/dep) and [hajemoshi/oto](https://github.com/hajimehoshi/oto#prerequisite)
 so make sure you can follow the instructions (especially on Linux/FreeBSD).
 
 ## screenshots
