@@ -49,3 +49,8 @@ colour profile.
 - `n` next track
 - `p` prev track
 - `q` quit
+
+## future plans
+
+- Split it in to a client-server architecture (like `mpd`).
+- More customizable UI.

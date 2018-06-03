@@ -38,8 +38,7 @@ func (i *Input) Delete() {
 }
 
 // Move increments the cursor by n (n can be negative). If moving the cursor
-// brings it to an invalid position (< 0 or > length of buffer) then it will
-// automatically be corrected.
+// brings it to an invalid position then it will automatically be corrected.
 func (i *Input) Move(n int) {
 	i.idx = min(max(i.idx+n, 0), len(i.buf))
 }
